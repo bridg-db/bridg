@@ -1,4 +1,4 @@
-# Bridg - ALPHA
+# Bridg (ALPHA) Query your DB from any JS frontend
 
 ## Use your Prisma client on any frontend. Seriously.
 
@@ -10,6 +10,14 @@ Postgres, MySQL, SQLite, SQL Server, Mongo, CockroachDB
 
 **Note:** Bridg is **not** ready for production. There are known vulnerabilities with database rules. If you stumble upon a vulnerability, please create an issue so it can be addressed.
 
+### Querying Your Database:
+
+Bridg is built on top of Prisma, you can check out the basics of executing CRUD queries [here](https://www.prisma.io/docs/concepts/components/prisma-client/crud).
+
+The [Prisma documentation](https://www.prisma.io/docs/getting-started) is excellent and is highly recommended if you haven't used Prisma in the past.
+
+## Getting started
+
 ### Example Projects:
 
 These examples are for demonstration purposes only. NextJS and React are not required to use this library. Bridg is compatible with any JS or TS frontend project.
@@ -18,11 +26,7 @@ These examples are for demonstration purposes only. NextJS and React are not req
 
 [Blogging app](./examples/next-nextauth-blogs/) - NextJS w/ next-auth authentication
 
-### Querying Your Database:
-
-Bridg is built on top of Prisma, you can check out the basics of executing CRUD queries [here](https://www.prisma.io/docs/concepts/components/prisma-client/crud).
-
-The [Prisma documentation](https://www.prisma.io/docs/getting-started) is excellent and is highly recommended if you haven't used Prisma in the past.
+_Want an example project for your favorite framework? Feel free to create an issue or a PR with a sample. Bridg **should** work with any JS framework._
 
 ### Wtf are these db rules for?
 
