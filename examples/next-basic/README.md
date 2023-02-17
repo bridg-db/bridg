@@ -4,7 +4,7 @@
 
 This repository is for demonstration purposes. NextJS is not required to use Bridg. Bridg is compatible with any JS or TS frontend project.
 
-1. `git clone TODO: url` and cd into directory
+1. `git clone https://github.com/JoeRoddy/bridg-examples-nextjs` and cd into directory
 2. `npm install`
 3. `npm run generate`
 4. `npm run dev`
