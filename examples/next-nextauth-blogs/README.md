@@ -16,6 +16,6 @@ This repository is for demonstration purposes. NextJS is not required to use Bri
     - Click "New OAuth App"
     - Set Homepage URL to: http://localhost:3000
     - Set callback URL to: http://localhost:3000/api/auth/callback/github
-    - Add the given Client ID and secret to [...nextauth.ts](./src/pages/api/auth/%5B...nextauth%5D.ts) or configure them as environment variables
+    - Add the given Client ID and secret to [...nextauth.ts](./src/pages/api/auth/%5B...nextauth%5D.ts) or configure them as environment variables in `.env.local`
 
 5.  `npm run dev`
