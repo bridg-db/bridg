@@ -1,0 +1,8 @@
+node_modules/
+dist/
+tmp/
+app/
+package-lock.json
+
+# npm tarball
+*.tgz 

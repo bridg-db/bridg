@@ -1,0 +1,27 @@
+{
+  "name": "bridg",
+  "version": "1.0.2",
+  "description": "Client library for PrismaUI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "npx vitest",
+    "build": "tsc --project ./tsconfig.build.json",
+    "build-client": "tsc ./tmp/**/*.ts --declaration --outDir ./app && rm -rf ./tmp",
+    "generate-ts": "node ./dist/generator/index.js ../../../prisma/schema.prisma",
+    "prepublish": "npm run build",
+    "generate": "npm run generate-ts && npm run build-client"
+  },
+  "keywords": [],
+  "author": "Joe Roddy",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "@types/strip-comments": "^2.0.1",
+    "typescript": "^4.9.5",
+    "vitest": "^0.27.2"
+  },
+  "dependencies": {
+    "strip-comments": "^2.0.1"
+  }
+}
