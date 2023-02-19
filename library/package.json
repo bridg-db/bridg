@@ -1,6 +1,6 @@
 {
   "name": "bridg",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Client library for PrismaUI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

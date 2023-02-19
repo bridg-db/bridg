@@ -45,10 +45,10 @@ const MODEL_TEMPLATE = `
         : number
         // @ts-ignore
     > => exec({ func: 'count', model: '*{model}', args }),
-    delete: <T extends Prisma.*{Model}DeleteArgs>(
-        args: Prisma.SelectSubset<T, Prisma.*{Model}DeleteArgs>,
-        // @ts-ignore
-    ): Prisma.Prisma__*{Model}Client<Prisma.*{Model}GetPayload<T>> => exec({ func: 'delete', model: '*{model}', args }),
+    // delete: <T extends Prisma.*{Model}DeleteArgs>(
+    //     args: Prisma.SelectSubset<T, Prisma.*{Model}DeleteArgs>,
+    //     // @ts-ignore
+    // ): Prisma.Prisma__*{Model}Client<Prisma.*{Model}GetPayload<T>> => exec({ func: 'delete', model: '*{model}', args }),
     deleteMany: <T extends Prisma.*{Model}DeleteManyArgs>(
         args?: Prisma.SelectSubset<T, Prisma.*{Model}DeleteManyArgs>,
         // @ts-ignore
@@ -66,16 +66,16 @@ const MODEL_TEMPLATE = `
         args?: Prisma.SelectSubset<T, Prisma.*{Model}FindManyArgs>,
         // @ts-ignore
     ): PrismaPromise<Array<Prisma.*{Model}GetPayload<T>>> => exec({ func: 'findMany', model: '*{model}', args }),
-    findUnique: <T extends Prisma.*{Model}FindUniqueArgs>(
-        args: Prisma.SelectSubset<T, Prisma.*{Model}FindUniqueArgs>,
-    ): Prisma.Prisma__*{Model}Client<Prisma.*{Model}GetPayload<T> | null, null> =>
-        // @ts-ignore
-        exec({ func: 'findUnique', model: '*{model}', args }),
-    findUniqueOrThrow: <T extends Prisma.*{Model}FindUniqueOrThrowArgs>(
-        args?: Prisma.SelectSubset<T, Prisma.*{Model}FindUniqueOrThrowArgs>,
-    ): Prisma.Prisma__*{Model}Client<Prisma.*{Model}GetPayload<T>> =>
-        // @ts-ignore
-        exec({ func: 'findUniqueOrThrow', model: '*{model}', args }),
+    // findUnique: <T extends Prisma.*{Model}FindUniqueArgs>(
+    //     args: Prisma.SelectSubset<T, Prisma.*{Model}FindUniqueArgs>,
+    // ): Prisma.Prisma__*{Model}Client<Prisma.*{Model}GetPayload<T> | null, null> =>
+    //     // @ts-ignore
+    //     exec({ func: 'findUnique', model: '*{model}', args }),
+    // findUniqueOrThrow: <T extends Prisma.*{Model}FindUniqueOrThrowArgs>(
+    //     args?: Prisma.SelectSubset<T, Prisma.*{Model}FindUniqueOrThrowArgs>,
+    // ): Prisma.Prisma__*{Model}Client<Prisma.*{Model}GetPayload<T>> =>
+    //     // @ts-ignore
+    //     exec({ func: 'findUniqueOrThrow', model: '*{model}', args }),
     groupBy: (args?: Prisma.*{Model}GroupByArgs) => exec({ func: 'groupBy', model: '*{model}', args }),
     update: <T extends Prisma.*{Model}UpdateArgs>(
         args: Prisma.SelectSubset<T, Prisma.*{Model}UpdateArgs>,
