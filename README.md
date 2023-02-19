@@ -1,14 +1,12 @@
-# Bridg (ALPHA) Query your DB from any JS frontend
+# Bridg - Query your DB directly from the frontend
 
-## Use your Prisma client on any frontend. Seriously.
+_Prisma on your UI_
 
-Bridg let's you query your existing database from the client, like Firebase or an equivalent BaaS (Backend as a service).
+Bridg let's you query your existing database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
 
-### Supported Databases:
+### Note
 
-Postgres, MySQL, SQLite, SQL Server, Mongo, CockroachDB
-
-**Note:** Bridg is **not** ready for production. There are known vulnerabilities with database rules. If you stumble upon a vulnerability, please create an issue so it can be addressed.
+This library is **not** ready for production. There are known vulnerabilities with database rules. If you stumble upon a vulnerability, please 🙏 create an issue with an example so I can address it.
 
 ### Querying Your Database:
 
@@ -22,15 +20,17 @@ The [Prisma documentation](https://www.prisma.io/docs/getting-started) is excell
 
 These examples are for demonstration purposes only. NextJS and React are not required to use this library. Bridg is compatible with any JS or TS frontend project.
 
-[NextJS barebones setup](./examples/next-basic/)
+[NextJS barebones setup](./examples/next-basic/) - Simple NextJS example with SQLite database
 
-[Blogging app](./examples/next-nextauth-blogs/) - NextJS w/ next-auth authentication
+- [Codesandbox for this^ project](https://codesandbox.io/p/github/JoeRoddy/bridg-examples-nextjs/draft/laughing-alex?f[…]6s78wfs%2522%255D%252C%2522hideCodeEditor%2522%253Afalse%257D)
 
-_Want an example project for your favorite framework? Feel free to create an issue or a PR with a sample. Bridg **should** work with any JS framework._
+[Blogging app](./examples/next-nextauth-blogs/) - NextJS, next-auth authentication, CRUD examples, SQLite
+
+_Want an example project for your favorite framework? Feel free to create an issue, or a PR with a sample. Bridg **should**_ 🤷‍♂️ _work with any JS framework._
 
 ### Wtf are these db rules for?
 
-Because your database is now available on the frontend, that means anyone who can access your website will have direct access to your database. Fortunately, we can create custom rules to prevent our queries from being used nefariously 🥷.
+Because your database is now available on the frontend, that means anyone who can access your website will have access to your database. Fortunately, we can create custom rules to prevent our queries from being used nefariously 🥷.
 
 Your rules could look something like the following:
 
