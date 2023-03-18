@@ -37,8 +37,8 @@ To fix this until issue is resolved: Change "\${model}" read rules to not rely o
         delete args.where;
       } else {
         const rulesWhere = ruleWhereOrBool === true ? {} : ruleWhereOrBool;
-        args.where = { AND: [rulesWhere, args?.where || {}] };
-      }
+        // Note: AND: [args.where, rulesWhere] breaks on findUnique, update, delete
+        args.where = { ...(args?.where || {}), AND: [rulesWhere] };      }
     }
     if (args.include) {
       args.include &&
@@ -77,13 +77,13 @@ const funcOptions = [
   'aggregate',
   'count',
   'create',
-  // 'delete',
+  'delete',
   'deleteMany',
   'findFirst',
   'findFirstOrThrow',
   'findMany',
-  // 'findUnique',
-  // 'findUniqueOrThrow',
+  'findUnique',
+  'findUniqueOrThrow',
   'groupBy',
   'update',
   'updateMany',
@@ -95,13 +95,13 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'get' | 'post' | 'patch' | 'de
   aggregate: 'get',
   count: 'get',
   create: 'post',
-  // delete: 'delete',
+  delete: 'delete',
   deleteMany: 'delete',
   findFirst: 'get',
   findFirstOrThrow: 'get',
   findMany: 'get',
-  // findUnique: 'get',
-  // findUniqueOrThrow: 'get',
+  findUnique: 'get',
+  findUniqueOrThrow: 'get',
   groupBy: 'get',
   update: 'get',
   updateMany: 'get',
