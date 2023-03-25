@@ -21,28 +21,35 @@ export const handleRequest = async (
   const { db, uid, rules } = config;
   const method = FUNC_METHOD_MAP[func];
 
-  const applyRulesWheres = (args: { where?: any; include?: any; data?: any }, model: Model, acceptsWheres = true) => {
+  const applyRulesWheres = async (
+    args: { where?: any; include?: any; data?: any },
+    model: Model,
+    acceptsWheres = true,
+  ) => {
     const queryValidator = rules[model]?.[method] || false;
-    const ruleWhereOrBool = typeof queryValidator === 'function' ? queryValidator(uid, args?.data) : queryValidator;
+    const ruleWhereOrBool =
+      typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
     if (ruleWhereOrBool === false) throw new Error('Unauthorized');
     if (typeof ruleWhereOrBool === 'object' && !acceptsWheres) {
       console.log(
-        \`Rule error on nested model: "\${model}".  Cannot apply prisma where clauses to N-1 or 1-1 relationships, only 1-N.\nMore info: https://github.com/prisma/prisma/issues/16049\n
+        \`Rule error on nested model: "\${model}".  Cannot apply prisma where clauses to N-1 or 1-1 relationships, only 1-N.
+More info: https://github.com/prisma/prisma/issues/16049
+
 To fix this until issue is resolved: Change "\${model}" read rules to not rely on where clauses, OR for N-1 relationships, invert the include so the "\${model}" model is including the many table. (N-1 => 1-N)\`,
       );
       throw new Error('Unauthorized');
-    }
-    else if (method !== 'post') {
+    } else if (method !== 'post') {
       if (ruleWhereOrBool === true && !acceptsWheres) {
         delete args.where;
       } else {
         const rulesWhere = ruleWhereOrBool === true ? {} : ruleWhereOrBool;
         // Note: AND: [args.where, rulesWhere] breaks on findUnique, update, delete
-        args.where = { ...(args?.where || {}), AND: [rulesWhere] };      }
+        args.where = { ...(args?.where || {}), AND: [rulesWhere] };
+      }
     }
     if (args.include) {
-      args.include &&
-        Object.keys(args.include).forEach((relationName: string) => {
+      await Promise.all(
+        Object.keys(args.include).map((relationName: string) => {
           const m = MODEL_RELATION_MAP[model][relationName];
           const relationInclude = args.include[relationName];
           if (relationInclude === false) return true;
@@ -51,12 +58,13 @@ To fix this until issue is resolved: Change "\${model}" read rules to not rely o
             return applyRulesWheres(args.include[relationName], m.model, m.acceptsWheres);
           }
           return applyRulesWheres(relationInclude, m.model, m.acceptsWheres);
-        });
+        }),
+      );
     }
   };
 
   try {
-    applyRulesWheres(args, model);
+    await applyRulesWheres(args, model);
   } catch (err: any) {
     return { status: 401, data: { error: 'Unauthorized' } };
   }

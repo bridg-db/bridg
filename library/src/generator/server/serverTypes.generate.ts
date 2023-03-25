@@ -59,11 +59,12 @@ export const generateServerTypes = (models: string[], schemaStr: string) => {
     2,
   )}
 
+  type OptionalPromise<T> = T | Promise<T>;
   type MethodRulesObject<WhereInput, CreateInput> = Partial<{
-    get: boolean | WhereInput | ((uid?: string) => boolean | WhereInput);
-    patch: boolean | WhereInput | ((uid?: string, body?: CreateInput) => boolean | WhereInput);
-    post: boolean | ((uid?: string, body?: CreateInput) => boolean);
-    delete: boolean | WhereInput | ((uid?: string) => boolean | WhereInput);
+    get: boolean | WhereInput | ((uid?: string) => OptionalPromise<boolean | WhereInput>);
+    patch: boolean | WhereInput | ((uid?: string, body?: CreateInput) => OptionalPromise<boolean | WhereInput>);
+    post: boolean | ((uid?: string, body?: CreateInput) => OptionalPromise<boolean>);
+    delete: boolean | WhereInput | ((uid?: string) => OptionalPromise<boolean | WhereInput>);
   }>;
   
   export type DbRules = Partial<{${innerRules}
