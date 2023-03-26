@@ -23,9 +23,9 @@ export const handleRequest = async (
 
   const applyRulesWheres = async (
     args: { where?: any; include?: any; data?: any },
-    model: Model,
-    acceptsWheres = true,
+    options: { model: Model; acceptsWheres?: boolean; method: 'get' | 'post' | 'patch' | 'delete' },
   ) => {
+    const { model, acceptsWheres, method } = options;
     const queryValidator = rules[model]?.[method] || false;
     const ruleWhereOrBool =
       typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
@@ -47,24 +47,50 @@ To fix this until issue is resolved: Change "\${model}" read rules to not rely o
         args.where = { ...(args?.where || {}), AND: [rulesWhere] };
       }
     }
+    const modelRelations = MODEL_RELATION_MAP[model];
     if (args.include) {
       await Promise.all(
         Object.keys(args.include).map((relationName: string) => {
-          const m = MODEL_RELATION_MAP[model][relationName];
+          const m = modelRelations[relationName];
           const relationInclude = args.include[relationName];
           if (relationInclude === false) return true;
           else if (relationInclude === true) {
             args.include[relationName] = { where: {} };
-            return applyRulesWheres(args.include[relationName], m.model, m.acceptsWheres);
+            return applyRulesWheres(args.include[relationName], { ...m, method: 'get' });
+          } else {
+            return applyRulesWheres(relationInclude, { ...m, method: 'get' });
           }
-          return applyRulesWheres(relationInclude, m.model, m.acceptsWheres);
         }),
+      );
+    }
+
+    // Handle nested creation / connection
+    if (args.data && method === 'post') {
+      const relationNames = Object.keys(modelRelations);
+      const relationsInDataProp = Object.keys(args.data).filter((key) => relationNames.includes(key));
+      await Promise.all(
+        relationsInDataProp
+          .map((relationName) => {
+            // mutationMethod: create | connect | connectOrCreate
+            return Object.keys(args.data[relationName]).map((mutationMethod) => {
+              const m = modelRelations[relationName];
+              const method = mutationMethod === 'connect' ? 'patch' : 'post';
+              if (mutationMethod === 'connectOrCreate') {
+                // TODO: decide how to authorize connectOrCreate, it's via post for now
+                console.log('connectOrCreate not yet supported in Bridg, could violate database rules');
+                throw Error('');
+              }
+
+              return applyRulesWheres({ data: args.data[relationName][mutationMethod] }, { ...m, method });
+            });
+          })
+          .flat(),
       );
     }
   };
 
   try {
-    await applyRulesWheres(args, model);
+    await applyRulesWheres(args, { model, method });
   } catch (err: any) {
     return { status: 401, data: { error: 'Unauthorized' } };
   }
