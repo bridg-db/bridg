@@ -10,12 +10,13 @@ interface Props {}
 
 const EditBlogPage: NextPage<Props> = ({}) => {
   const router = useRouter();
-  const blogId = useRouter().query.blogId as string;
+  const blogId = router.query.blogId as string;
   const [blog, setBlog] = useState<Blog>();
   useEffect(() => {
     if (!blogId) return;
     (async () => {
-      const blog = await db.blog.findFirst({ where: { id: blogId } });
+      const blog = await db.blog.findUnique({ where: { id: blogId } });
+      if (!blog) return router.push('/404');
       setBlog(blog);
     })();
   }, [blogId]);
@@ -24,7 +25,7 @@ const EditBlogPage: NextPage<Props> = ({}) => {
     <div>
       <BlogForm
         onSubmit={async (data) => {
-          await db.blog.updateMany({ where: { id: blogId }, data });
+          await db.blog.update({ where: { id: blogId }, data });
           router.push(`/blogs/${blog.id}`);
         }}
         onCancel={() => router.push(`/blogs/${blog.id}`)}

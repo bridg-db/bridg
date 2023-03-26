@@ -9,18 +9,20 @@ import BlogList from '@/pages/components/blogs/BlogList';
 interface Props {}
 
 const Blogs: NextPage<Props> = ({}) => {
-  const userId = useRouter().query.userId as string;
+  const router = useRouter();
+  const userId = router.query.userId as string;
   const [user, setUser] = useState<User & { blogs: Blog[] }>();
 
   useEffect(() => {
     if (!userId) return;
     (async () => {
-      const data = await db.user.findMany({
+      const user = await db.user.findUnique({
         where: { id: userId },
         include: { blogs: { where: { published: true } } },
       });
+      if (!user) return router.push('/404');
 
-      setUser(data?.at(0));
+      setUser(user);
     })();
   }, [userId]);
 

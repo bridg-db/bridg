@@ -1,9 +1,8 @@
 import BlogForm from '@/pages/components/blogs/BlogForm';
-import { Blog } from '@prisma/client';
+import db from 'bridg/app/client/db';
 import { NextPage } from 'next';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import db from 'bridg/app/client/db';
 
 interface Props {}
 
@@ -17,7 +16,6 @@ const CreateBlogPage: NextPage<Props> = ({}) => {
         const newBlog = await db.blog.create({
           data: { ...blog, userId: session.data?.user?.id },
         });
-        console.log('new blog:', newBlog);
         router.push(`/blogs/${newBlog.id}`);
       }}
     />
