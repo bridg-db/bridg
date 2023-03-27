@@ -23,9 +23,9 @@ export const handleRequest = async (
 
   const applyRulesWheres = async (
     args: { where?: any; include?: any; data?: any },
-    options: { model: Model; acceptsWheres?: boolean; method: 'get' | 'post' | 'patch' | 'delete' },
+    options: { model: Model; acceptsWheres?: boolean; method: 'find' | 'create' | 'update' | 'delete' },
   ) => {
-    const { model, acceptsWheres, method } = options;
+    const { model, acceptsWheres = true, method } = options;
     const queryValidator = rules[model]?.[method] || false;
     const ruleWhereOrBool =
       typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
@@ -38,7 +38,7 @@ More info: https://github.com/prisma/prisma/issues/16049
 To fix this until issue is resolved: Change "\${model}" read rules to not rely on where clauses, OR for N-1 relationships, invert the include so the "\${model}" model is including the many table. (N-1 => 1-N)\`,
       );
       throw new Error('Unauthorized');
-    } else if (method !== 'post') {
+    } else if (method !== 'create') {
       if (ruleWhereOrBool === true && !acceptsWheres) {
         delete args.where;
       } else {
@@ -56,16 +56,16 @@ To fix this until issue is resolved: Change "\${model}" read rules to not rely o
           if (relationInclude === false) return true;
           else if (relationInclude === true) {
             args.include[relationName] = { where: {} };
-            return applyRulesWheres(args.include[relationName], { ...m, method: 'get' });
+            return applyRulesWheres(args.include[relationName], { ...m, method: 'find' });
           } else {
-            return applyRulesWheres(relationInclude, { ...m, method: 'get' });
+            return applyRulesWheres(relationInclude, { ...m, method: 'find' });
           }
         }),
       );
     }
 
     // Handle nested creation / connection
-    if (args.data && method === 'post') {
+    if (args.data && method === 'create') {
       const relationNames = Object.keys(modelRelations);
       const relationsInDataProp = Object.keys(args.data).filter((key) => relationNames.includes(key));
       await Promise.all(
@@ -74,9 +74,9 @@ To fix this until issue is resolved: Change "\${model}" read rules to not rely o
             // mutationMethod: create | connect | connectOrCreate
             return Object.keys(args.data[relationName]).map((mutationMethod) => {
               const m = modelRelations[relationName];
-              const method = mutationMethod === 'connect' ? 'patch' : 'post';
+              const method = mutationMethod === 'connect' ? 'update' : 'create';
               if (mutationMethod === 'connectOrCreate') {
-                // TODO: decide how to authorize connectOrCreate, it's via post for now
+                // TODO: decide how to authorize connectOrCreate, it's via create for now
                 console.log('connectOrCreate not yet supported in Bridg, could violate database rules');
                 throw Error('');
               }
@@ -125,23 +125,22 @@ const funcOptions = [
 ] as const;
 type PrismaFunction = typeof funcOptions[number];
 
-const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'get' | 'post' | 'patch' | 'delete' } = {
-  aggregate: 'get',
-  count: 'get',
-  create: 'post',
+const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' | 'delete' } = {
+  aggregate: 'find',
+  count: 'find',
+  create: 'create',
   delete: 'delete',
   deleteMany: 'delete',
-  findFirst: 'get',
-  findFirstOrThrow: 'get',
-  findMany: 'get',
-  findUnique: 'get',
-  findUniqueOrThrow: 'get',
-  groupBy: 'get',
-  update: 'get',
-  updateMany: 'get',
-  upsert: 'get',
-};
-`;
+  findFirst: 'find',
+  findFirstOrThrow: 'find',
+  findMany: 'find',
+  findUnique: 'find',
+  findUniqueOrThrow: 'find',
+  groupBy: 'find',
+  update: 'update',
+  updateMany: 'update',
+  upsert: 'update',
+}`;
 
 // Currently this is just a static file with no templating,
 // just generating it now bc its likely we'll need to template it eventually
