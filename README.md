@@ -37,9 +37,9 @@ Your rules could look something like the following:
 ```ts
 export const rules: DbRules = {
   user: {
-    get: { profileIsPublic: true }, // only allow reads on public profiles
-    patch: (uid, data) => ({ id: uid }), // update only if its being done by the user
-    post: (uid, data) => {
+    find: { profileIsPublic: true }, // only allow reads on public profiles
+    update: (uid, data) => ({ id: uid }), // update only if its being done by the user
+    create: (uid, data) => {
       // prevent the user from starting themself at level 99
       if (data.level !== 1) return false;
       return true; // otherwise allow creation
@@ -56,21 +56,21 @@ As you can see your rules will basically look like:
 ```ts
 {
     tableName: {
-        get: validator,
-        delete: validator
+        find: validator,
+        delete: validator,
     }
 }
 ```
 
-**NOTE: If you don't provide a rule for a method, it will default to preventing those requests.**
+**NOTE: If you don't provide a rule for a property, it will default to preventing those requests.**
 
-In the above example, all `patch` (update) and `post` (create) requests will fail. Since they weren't provided, they default to `false`.
+In the above example, all `update` and `create` requests will fail. Since they weren't provided, they default to `false`.
 
-The methods available to create rules for are:
+The properties available to create rules for are:
 
-- `get`: authorizes reading of data
-- `patch`: authorizes updates
-- `post`: authorizes creating data
+- `find`: authorizes reading of data
+- `update`: authorizes updates
+- `create`: authorizes creating data
 - `delete`: authorizes deleting data
 
 ### What is a validator?
@@ -83,29 +83,29 @@ They can be provided in three ways:
 
 ```ts
 tableName {
-    get: false, // blocks all reads on a model
-    post: true // allows any creation for a model
+    find: false, // blocks all reads on a model
+    create: true // allows any creation for a model
 }
 ```
 
 **where clause** - You can also apply a Prisma where clause for the given model. This clause will be required to be true, along with whatever input is passed from the client request.
 
-note: `post` does not accept where clauses
+note: `create` does not accept where clauses
 
 ```ts
 blog {
     // allow reads only on blogs where isPublished = true
-    get: { isPublished: true }
+    find: { isPublished: true }
 }
 ```
 
-**callback function** - The most powerful option is a callback function. This will allow you to dynamically authorize requests based on the context of the request.
+**callback function** - The most powerful option is a callback function. This will allow you to dynamically authorize requests based on the context of the request. You can also pass an `async` function, and make as many async calls as you want in the validator.
 
 **args:**
 
 `uid`: the id of the user making the request
 
-`data`: the body data from the request (only available on patch, post)
+`data`: the body data from the request (only available on update, create)
 
 **return value:** `boolean` | `where clause`
 
@@ -115,10 +115,10 @@ Example:
 
 ```ts
 blog {
-    // allow reads if the blog is published OR if it's the user's own blog
-    get: (uid) => ({ OR: [{ isPublished: true }, {authorId: uid}]})
+    // allow reads if the blog is published OR if the user authored the blog
+    find: (uid) => ({ OR: [{ isPublished: true }, {authorId: uid}]})
     // prevent the user from setting their own vote count
-    post: (uid, data) => {
+    create: (uid, data) => {
         if(data.voteCount === 0) {
             return true;
         } else {
