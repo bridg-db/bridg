@@ -124,6 +124,12 @@ blog {
         } else {
             return false;
         }
+    },
+    // make an async call to determine if request should resolve
+    // note: this should USUALLY be done via a relational query
+    delete: async (uid) => {
+        const user = await db.user.findFirst({ where: {id: uid }});
+        return user.isAdmin ? true : false;
     }
 }
 ```
