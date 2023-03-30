@@ -28,7 +28,7 @@ These examples are for demonstration purposes only. NextJS and React are not req
 
 _Want an example project for your favorite framework? Feel free to create an issue, or a PR with a sample. Bridg **should**_ 🤷‍♂️ _work with any JS framework._
 
-### Wtf are these db rules for?
+### Wtf are these db rules?
 
 Because your database is now available on the frontend, that means anyone who can access your website will have access to your database. Fortunately, we can create custom rules to prevent our queries from being used nefariously 🥷.
 
@@ -51,7 +51,7 @@ export const rules: DbRules = {
 };
 ```
 
-As you can see your rules will basically look like:
+As you can see, your rules will basically look like:
 
 ```ts
 {
@@ -116,7 +116,7 @@ Example:
 ```ts
 blog {
     // allow reads if the blog is published OR if the user authored the blog
-    find: (uid) => ({ OR: [{ isPublished: true }, {authorId: uid}]})
+    find: (uid) => ({ OR: [{ isPublished: true }, {authorId: uid}]}),
     // prevent the user from setting their own vote count
     create: (uid, data) => {
         if(data.voteCount === 0) {

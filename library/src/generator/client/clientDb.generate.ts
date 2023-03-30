@@ -87,11 +87,11 @@ const *{model}Client = {
     ): PrismaPromise<Prisma.BatchPayload> =>
         // @ts-ignore
         exec({ func: 'updateMany', model: '*{model}', args }),
-    upsert: <T extends Prisma.*{Model}UpsertArgs>(
-        args: Prisma.SelectSubset<T, Prisma.*{Model}UpsertArgs>,
-    ): Prisma.Prisma__*{Model}Client<Prisma.*{Model}GetPayload<T>> =>
-        // @ts-ignore
-        exec({ func: 'upsert', model: '*{model}', args }),
+    // upsert: <T extends Prisma.*{Model}UpsertArgs>(
+    //     args: Prisma.SelectSubset<T, Prisma.*{Model}UpsertArgs>,
+    // ): Prisma.Prisma__*{Model}Client<Prisma.*{Model}GetPayload<T>> =>
+    //     // @ts-ignore
+    //     exec({ func: 'upsert', model: '*{model}', args }),
   };  
   `;
 

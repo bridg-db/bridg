@@ -121,7 +121,7 @@ const funcOptions = [
   'groupBy',
   'update',
   'updateMany',
-  'upsert',
+  // 'upsert',
 ] as const;
 type PrismaFunction = typeof funcOptions[number];
 
@@ -139,7 +139,7 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' |
   groupBy: 'find',
   update: 'update',
   updateMany: 'update',
-  upsert: 'update',
+  // upsert: 'update',
 }`;
 
 // Currently this is just a static file with no templating,
