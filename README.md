@@ -1,34 +1,196 @@
 # Bridg - Query your DB directly from the frontend
 
-_Prisma on your UI_
+Bridg let's you query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
 
-Bridg let's you query your existing database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
+[Getting Started](#getting-started)  
+[Querying Your Database](#querying-your-database)  
+[Protecting Your Data](#database-rules)
 
-### Note
+This library is **not** quite ready for production. There are a few known vulnerabilities with database rules. If you stumble upon a vulnerability, please 🙏 [create an issue](https://github.com/JoeRoddy/bridg/issues/new) with a detailed example so it can be fixed.
 
-This library is **not** ready for production. There are known vulnerabilities with database rules. If you stumble upon a vulnerability, please 🙏 create an issue with an example so I can address it.
+## Supported Databases
 
-### Querying Your Database:
+MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQL, MariaDB, AWS Aurora, CockroachDB
+
+## Getting started
+
+### Example Projects
+
+These examples are for demonstration purposes. Next.js and React are not required to use this library. Bridg should work with any JS or TS project.
+
+[Next.js barebones setup](./examples/next-basic/) - Simple Next.js example with SQLite database
+
+- [Codesandbox for this^ project](https://codesandbox.io/p/github/JoeRoddy/bridg-examples-nextjs/draft/laughing-alex?f[…]6s78wfs%2522%255D%252C%2522hideCodeEditor%2522%253Afalse%257D)
+  - Will need to open up new terminal tab and run `npm run generate`
+  - fails to load like 25% of the time, (I think bc of SQLite), just a heads up
+
+[Blogging app](./examples/next-nextauth-blogs/) - Next.js, next-auth authentication, CRUD examples, SQLite
+
+_Want an example project for your favorite framework? Feel free to [create an issue](https://github.com/JoeRoddy/bridg/issues/new), or a PR with a sample._
+
+### Add Bridg to an existing project
+
+1. [Configure your project to use Prisma ](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres)
+   - You can also use an existing database, generating a schema file via introspection
+2. Install Bridg: `npm install bridg`
+3. Add the following script to your `package.json` (WIP 😅, will be moved to a cli):
+
+```json
+{
+  "scripts": {
+    "generate": "npx prisma generate && node ./node_modules/bridg/dist/generator/index.js ./prisma/schema.prisma && npm explore bridg -- npm run build-client"
+  }
+}
+```
+
+4. `npm run generate`
+5. Expose an API endpoint at `/api/bridg` to handle requests:
+
+```ts
+// Example Next.js API handler
+import { handleRequest } from 'bridg/app/server/request-handler';
+import { PrismaClient } from '@prisma/client';
+
+const db = new PrismaClient();
+const rules = { user: { find: true } };
+
+export default async function handler(req, res) {
+  // Mock authentication, replace with any auth system you want
+  const userId = 'some-fake-user-id';
+  const { data, status } = await handleRequest(req.body, { db, uid: userId, rules });
+
+  return res.status(status).json(data);
+}
+```
+
+### Note on applications with separate server / client:
+
+This library has yet to be tested with apps running a server & client in separate repos, but it should work 🤷‍♂️. You would want to install Bridg and Prisma on your server, run the `generate` script, and copy the Bridg client (`node_modules/bridg/app/client`) and Prisma types to your client application.
+
+## Querying Your Database
 
 Bridg is built on top of Prisma, you can check out the basics of executing CRUD queries [here](https://www.prisma.io/docs/concepts/components/prisma-client/crud).
 
 The [Prisma documentation](https://www.prisma.io/docs/getting-started) is excellent and is highly recommended if you haven't used Prisma in the past.
 
-## Getting started
+Note: For security reasons, some functionality, [like upserts](https://github.com/JoeRoddy/bridg/issues/1), may not be available at this time, but we are working towards full compatibility with Prisma.
 
-### Example Projects:
+Executing queries works like so:
 
-These examples are for demonstration purposes only. NextJS and React are not required to use this library. Bridg is compatible with any JS or TS frontend project.
+```ts
+import db from 'bridg/app/client/db';
 
-[NextJS barebones setup](./examples/next-basic/) - Simple NextJS example with SQLite database
+const data = await db.tableName.crudMethod(args);
+```
 
-- [Codesandbox for this^ project](https://codesandbox.io/p/github/JoeRoddy/bridg-examples-nextjs/draft/laughing-alex?f[…]6s78wfs%2522%255D%252C%2522hideCodeEditor%2522%253Afalse%257D)
+The following are simplified examples. If you're thinking _"I wonder if I could do X with this.."_, the answer is probably yes. You will just need to search for "pagination with Prisma", or for whatever you're trying to achieve.
 
-[Blogging app](./examples/next-nextauth-blogs/) - NextJS, next-auth authentication, CRUD examples, SQLite
+### Creating Data:
 
-_Want an example project for your favorite framework? Feel free to create an issue, or a PR with a sample. Bridg **should**_ 🤷‍♂️ _work with any JS framework._
+```ts
+// create a single db record
+const createdUser = await db.user.create({
+  data: {
+    name: 'John',
+    email: 'johndoe@gmail.com',
+  },
+});
 
-### Wtf are these db rules?
+// create multiple records at once:
+const creationCount = await prisma.user.createMany({
+  data: [
+    { name: 'John', email: 'johndoe@gmail.com' },
+    { name: 'Sam', email: 'sam.johnson@outlook.com' },
+    // ..., ...,
+  ],
+});
+
+// create a user, and create a relational blog for them
+const createdUser = await db.user.create({
+  data: {
+    name: 'John',
+    email: 'johndoe@gmail.com',
+    blogs: {
+      create: {
+        title: 'My first blog',
+        body: 'And that was my first blog, it was a short one..',
+      },
+    },
+  },
+});
+```
+
+### Reading Data:
+
+```ts
+// all records within a table:
+const users = await db.user.findMany();
+
+// all records that satisfy a where clause:
+const users = await db.user.findMany({ where: { profileIsPublic: true } });
+
+// get the first record that satisfies a where clause:
+const user = await db.user.findFirst({ where: { email: 'johndoe@gmail.com' } });
+
+// enforce that only one record could ever exist (must pass a unique column id):
+const user = await db.user.findUnique({ where: { id: 'some-id' } });
+
+// do the same thing, but throw an error if the data is missing
+const user = await db.user.findUniqueOrThrow({ where: { id: 'some-id' } });
+```
+
+### Including Relational Data:
+
+```ts
+// all users and a list of all their blogs:
+const users = await db.user.findMany({ include: { blogs: true } });
+
+// where clauses can be applied to relational data:
+const users = await db.user.findMany({
+  include: {
+    blogs: { where: { published: true } },
+  },
+});
+
+// nest all blogs, and all comments on blogs. its just relations all the way down.
+const users = await db.user.findMany({
+  include: {
+    blogs: {
+      include: { comments: true },
+    },
+  },
+});
+```
+
+For more details on advanced querying, filtering and sorting, [check out this page from the Prisma docs.](https://www.prisma.io/docs/concepts/components/prisma-client/crud#get-the-first-record-that-matches-a-specific-criteria)
+
+### Updating data:
+
+```ts
+// update a single record
+const updatedData = await prisma.blog.update({
+  where: { id: 'some-id' }, // must use a unique db key to use .update
+  data: { title: 'New Blog title' },
+});
+
+// update many records
+const updateCount = await prisma.blog.updateMany({
+  where: { authorId: userId },
+  data: { isPublished: true },
+});
+```
+
+### Deleting data:
+
+```ts
+// delete a single record.  must use a unique db key to use .delete
+const deletedBlog = await prisma.blog.delete({ where: { id: 'some-id' } });
+
+// delete many records
+const deleteCount = await prisma.blog.deleteMany({ where: { isPublished: false } });
+```
+
+## Database Rules
 
 Because your database is now available on the frontend, that means anyone who can access your website will have access to your database. Fortunately, we can create custom rules to prevent our queries from being used nefariously 🥷.
 
@@ -68,10 +230,10 @@ In the above example, all `update` and `create` requests will fail. Since they w
 
 The properties available to create rules for are:
 
-- `find`: authorizes reading of data
-- `update`: authorizes updates
-- `create`: authorizes creating data
-- `delete`: authorizes deleting data
+- `find`: authorizes reading data (.findMany, .findFirst, .findFirstOrThrow, .findUnique, .findUniqueOrThrow, .aggregate, .count, .groupBy)
+- `update`: authorizes updates (.update, .updateMany)
+- `create`: authorizes creating data (.create)
+- `delete`: authorizes deleting data (.delete, .deleteMany)
 
 ### What is a validator?
 
@@ -114,22 +276,28 @@ Your callback function should either return a Prisma Where object for the corres
 Example:
 
 ```ts
-blog {
+const rules = {
+  blog: {
     // allow reads if the blog is published OR if the user authored the blog
-    find: (uid) => ({ OR: [{ isPublished: true }, {authorId: uid}]}),
+    find: (uid) => ({ OR: [{ isPublished: true }, { authorId: uid }] }),
+
     // prevent the user from setting their own vote count
-    create: (uid, data) => {
-        if(data.voteCount === 0) {
-            return true;
-        } else {
-            return false;
-        }
-    },
+    create: (uid, data) => (data.voteCount === 0 ? true : false),
+
     // make an async call to determine if request should resolve
     // note: this should USUALLY be done via a relational query
+    // which only takes 1 trip to the db, but they are not always practical
     delete: async (uid) => {
-        const user = await db.user.findFirst({ where: {id: uid }});
-        return user.isAdmin ? true : false;
-    }
-}
+      const user = await db.user.findFirst({ where: { id: uid } });
+      return user.isAdmin ? true : false;
+    },
+
+    // you can run literally any javascript you want, anything..
+    update: async (uid) => {
+      const isTheSunShining = await someWeatherApi.sunIsOut();
+      const philliesWinWorldSeries = Math.random() < 0.000001;
+      return isTheSunShining && philliesWinWorldSeries;
+    },
+  },
+};
 ```
