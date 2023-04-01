@@ -1,8 +1,7 @@
-import { it, expect, beforeAll } from 'vitest';
-import bridg from 'tests/bridg/client-db';
 import { PrismaClient } from '@prisma/client';
+import bridg from 'tests/bridg/client-db';
 import { setRules } from 'tests/bridg/test-rules';
-import { afterEach, beforeEach } from 'node:test';
+import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
 
 console.log('breh');
 
@@ -12,6 +11,8 @@ const TEST_TITLE = 'TEST_BLOG';
 beforeAll(async () => {
   await prisma.blog.create({ data: { title: TEST_TITLE } });
 });
+
+beforeEach(() => setRules({}));
 
 it('can find', async () => {
   setRules({ blog: { find: true } });
@@ -29,4 +30,9 @@ it('cant find if rules block', async () => {
   });
 
   expect(res).toBeUndefined();
+});
+
+afterAll(async () => {
+  setRules({});
+  await prisma.blog.deleteMany({ where: { title: TEST_TITLE } });
 });
