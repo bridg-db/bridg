@@ -3,6 +3,7 @@ dist/
 tmp/
 app/
 package-lock.json
+.next
 
 # npm tarball
 *.tgz 
