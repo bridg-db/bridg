@@ -8,15 +8,13 @@ Bridg let's you query your database from the client, like Firebase or Supabase, 
 
 This library is **not** quite ready for production. There are a few known vulnerabilities with database rules. If you stumble upon a vulnerability, please 🙏 [create an issue](https://github.com/JoeRoddy/bridg/issues/new) with a detailed example so it can be fixed.
 
-## Supported Databases
+### Supported Databases
 
 MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQL, MariaDB, AWS Aurora, CockroachDB
 
 ## Getting started
 
 ### Example Projects
-
-These examples are for demonstration purposes. Next.js and React are not required to use this library. Bridg should work with any JS or TS project.
 
 [Next.js barebones setup](./examples/next-basic/) - Simple Next.js example with SQLite database
 
@@ -25,6 +23,8 @@ These examples are for demonstration purposes. Next.js and React are not require
   - fails to load like 25% of the time, (I think bc of SQLite), just a heads up
 
 [Blogging app](./examples/next-nextauth-blogs/) - Next.js, next-auth authentication, CRUD examples, SQLite
+
+Next.js and React are not required to use Bridg. Bridg should work with any JS or TS project.
 
 _Want an example project for your favorite framework? Feel free to [create an issue](https://github.com/JoeRoddy/bridg/issues/new), or a PR with a sample._
 

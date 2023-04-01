@@ -4,9 +4,9 @@ import { readFileAsString } from '../../utils/file.util';
 import { generateSchemaRelations } from '../server/serverTypes.generate';
 import strip from 'strip-comments';
 
-const schema1 = readFileAsString('library/generator/test/examples/schema1.prisma');
-const schema2 = readFileAsString('library/generator/test/examples/schema2.prisma');
-const schema3 = readFileAsString('library/generator/test/examples/schema3.prisma');
+const schema1 = readFileAsString('src/generator/test/examples/schema1.prisma');
+const schema2 = readFileAsString('src/generator/test/examples/schema2.prisma');
+const schema3 = readFileAsString('src/generator/test/examples/schema3.prisma');
 
 it('parses model names', () => {
   expect(parseModelNamesFromSchema(schema1)).toStrictEqual(['User', 'Blog']);
