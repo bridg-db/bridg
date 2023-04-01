@@ -16,13 +16,13 @@ MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQ
 
 ### Example Projects
 
-[Next.js barebones setup](./examples/next-basic/) - Simple Next.js example with SQLite database
+[Next.js barebones setup](https://github.com/JoeRoddy/bridg-example-nextjs) - Simple Next.js example with SQLite database
 
 - [Codesandbox for this^ project](https://codesandbox.io/p/github/JoeRoddy/bridg-examples-nextjs/draft/laughing-alex?f[…]6s78wfs%2522%255D%252C%2522hideCodeEditor%2522%253Afalse%257D)
   - Will need to open up new terminal tab and run `npm run generate`
   - fails to load like 25% of the time, (I think bc of SQLite), just a heads up
 
-[Blogging app](./examples/next-nextauth-blogs/) - Next.js, next-auth authentication, CRUD examples, SQLite
+[Blogging app](https://github.com/JoeRoddy/bridg-example-nextjs-auth-blogs) - Next.js, next-auth authentication, CRUD examples, SQLite
 
 Next.js and React are not required to use Bridg. Bridg should work with any JS or TS project.
 
