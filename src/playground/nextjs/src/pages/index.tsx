@@ -27,15 +27,15 @@ const BridgExample: NextPage = ({}) => {
 
 export const dbRules: DbRules = {
   blog: {
-    get: true,
-    patch: (uid) => ({ userId: uid }),
-    post: (uid, data) => data?.title === 'This blog title is allowed',
+    find: true,
+    update: (uid) => ({ userId: uid }),
+    create: (uid, data) => data?.title === 'This blog title is allowed',
     delete: (uid) => ({ userId: uid }),
   },
   user: {
-    get: true,
-    patch: (uid) => ({ id: uid }),
-    post: true,
+    find: true,
+    update: (uid) => ({ id: uid }),
+    create: true,
     delete: false,
   },
 };

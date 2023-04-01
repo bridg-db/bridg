@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import db from 'prisma/db';
 import { handleRequest } from 'bridg/app/server/request-handler';
+
 import { dbRules } from '@/pages';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<any>) {
