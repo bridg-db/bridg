@@ -14,18 +14,39 @@ beforeAll(async () => {
 
 beforeEach(() => setRules({}));
 
-it('Find rules work with true/false', async () => {
-  setRules({ blog: { find: true } });
-
-  const b1 = await bridg.blog.findFirst({ where: { title: TEST_TITLE } });
-  expect(b1).toBeTruthy();
-  expect(b1?.title).toBe(TEST_TITLE);
-
-  setRules({ blog: { find: false } });
-  const b2 = await bridg.blog.findFirst({ where: { title: TEST_TITLE } }).catch((err) => {
+const queryFails = async (query: Promise<any>) => {
+  const data = await query.catch((err) => {
     expect(err).toBeTruthy();
   });
-  expect(b2).toBeUndefined();
+  expect(data).toBeUndefined();
+};
+
+const querySucceeds = async (query: Promise<any>) => {
+  const data = await bridg.blog.findFirst({ where: { title: TEST_TITLE } });
+  expect(data).toBeTruthy();
+  return data;
+};
+
+it('Find rules work with true/false', async () => {
+  setRules({ blog: { find: false } });
+  await queryFails(bridg.blog.findMany({ where: { title: TEST_TITLE } }));
+  await queryFails(bridg.blog.findFirst({ where: { title: TEST_TITLE } }));
+  await queryFails(bridg.blog.findFirstOrThrow({ where: { title: TEST_TITLE } }));
+  await queryFails(bridg.blog.findUnique({ where: { id: testBlog.id } }));
+  await queryFails(bridg.blog.findUniqueOrThrow({ where: { id: testBlog.id } }));
+  await queryFails(bridg.blog.aggregate({ where: { id: testBlog.id } }));
+  await queryFails(bridg.blog.count());
+  await queryFails(bridg.blog.groupBy());
+
+  setRules({ blog: { find: true } });
+  await querySucceeds(bridg.blog.findFirst({ where: { title: TEST_TITLE } }));
+  await querySucceeds(bridg.blog.findFirst({ where: { title: TEST_TITLE } }));
+  await querySucceeds(bridg.blog.findFirstOrThrow({ where: { title: TEST_TITLE } }));
+  await querySucceeds(bridg.blog.findUnique({ where: { id: testBlog.id } }));
+  await querySucceeds(bridg.blog.findUniqueOrThrow({ where: { id: testBlog.id } }));
+  // await querySucceeds(bridg.blog.aggregate({ where: { id: testBlog.id } }));
+  await querySucceeds(bridg.blog.count());
+  // await querySucceeds(bridg.blog.groupBy());
 });
 
 const TEST_UPDATE_BODY = 'TEST_BLOG_UPDATED';
