@@ -31,7 +31,15 @@ _Want an example project for your favorite framework? Feel free to [create an is
 ### Add Bridg to an existing project
 
 1. [Configure your project to use Prisma ](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres)
-   - You can also use an existing database, generating a schema file via introspection
+   - Add the `extendedWhereUnique` preview feature to your `schema.prisma`
+
+```ts
+generator client {
+  provider        = "your-client"
+  previewFeatures = ["extendedWhereUnique"]
+}
+```
+
 2. Install Bridg: `npm install bridg`
 3. Add the following script to your `package.json` (WIP 😅, will be moved to a cli):
 
