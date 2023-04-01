@@ -47,7 +47,7 @@ _Want an example project for your favorite framework? Feel free to [create an is
 5. Expose an API endpoint at `/api/bridg` to handle requests:
 
 ```ts
-// Example Next.js API handler
+// Example Next.js API handler, translate to your JS API framework of choice
 import { handleRequest } from 'bridg/app/server/request-handler';
 import { PrismaClient } from '@prisma/client';
 
@@ -56,7 +56,10 @@ const rules = { user: { find: true } };
 
 export default async function handler(req, res) {
   // Mock authentication, replace with any auth system you want
-  const userId = 'some-fake-user-id';
+  const userId = 'authenticated-user-id';
+
+  // pass the request (req.body), your prisma client (db),
+  // the user making the request (uid), and your database rules (rules)
   const { data, status } = await handleRequest(req.body, { db, uid: userId, rules });
 
   return res.status(status).json(data);
@@ -65,7 +68,7 @@ export default async function handler(req, res) {
 
 ### Note on applications with separate server / client:
 
-This library has yet to be tested with apps running a server & client in separate repos, but it should work 🤷‍♂️. You would want to install Bridg and Prisma on your server, run the `generate` script, and copy the Bridg client (`node_modules/bridg/app/client`) and Prisma types to your client application.
+This library has yet to be tested with apps running a server & client in separate repos, but it should 🤷‍♂️ work. You would want to install Bridg and Prisma on your server, run the `generate` script, and copy the Bridg client (`node_modules/bridg/app/client`) and Prisma types to your client application.
 
 ## Querying Your Database
 
@@ -73,7 +76,7 @@ Bridg is built on top of Prisma, you can check out the basics of executing CRUD 
 
 The [Prisma documentation](https://www.prisma.io/docs/getting-started) is excellent and is highly recommended if you haven't used Prisma in the past.
 
-Note: For security reasons, some functionality, [like upserts](https://github.com/JoeRoddy/bridg/issues/1), may not be available at this time, but we are working towards full compatibility with Prisma.
+For security reasons, some functionality ([like upserts](https://github.com/JoeRoddy/bridg/issues/1)) aren't available, but I'm working towards full compatibility with Prisma.
 
 Executing queries works like so:
 
@@ -232,7 +235,7 @@ The properties available to create rules for are:
 
 - `find`: authorizes reading data (.findMany, .findFirst, .findFirstOrThrow, .findUnique, .findUniqueOrThrow, .aggregate, .count, .groupBy)
 - `update`: authorizes updates (.update, .updateMany)
-- `create`: authorizes creating data (.create)
+- `create`: authorizes creating data (.create, .createMany)
 - `delete`: authorizes deleting data (.delete, .deleteMany)
 
 ### What is a validator?
