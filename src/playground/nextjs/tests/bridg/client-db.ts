@@ -80,11 +80,11 @@ const userClient = {
   ): PrismaPromise<Prisma.BatchPayload> =>
     // @ts-ignore
     exec({ func: 'updateMany', model: 'user', args }),
-  upsert: <T extends Prisma.UserUpsertArgs>(
-    args: Prisma.SelectSubset<T, Prisma.UserUpsertArgs>,
-  ): Prisma.Prisma__UserClient<Prisma.UserGetPayload<T>> =>
-    // @ts-ignore
-    exec({ func: 'upsert', model: 'user', args }),
+  // upsert: <T extends Prisma.UserUpsertArgs>(
+  //     args: Prisma.SelectSubset<T, Prisma.UserUpsertArgs>,
+  // ): Prisma.Prisma__UserClient<Prisma.UserGetPayload<T>> =>
+  //     // @ts-ignore
+  //     exec({ func: 'upsert', model: 'user', args }),
 };
 
 const blogClient = {
@@ -147,14 +147,83 @@ const blogClient = {
   ): PrismaPromise<Prisma.BatchPayload> =>
     // @ts-ignore
     exec({ func: 'updateMany', model: 'blog', args }),
-  upsert: <T extends Prisma.BlogUpsertArgs>(
-    args: Prisma.SelectSubset<T, Prisma.BlogUpsertArgs>,
-  ): Prisma.Prisma__BlogClient<Prisma.BlogGetPayload<T>> =>
+  // upsert: <T extends Prisma.BlogUpsertArgs>(
+  //     args: Prisma.SelectSubset<T, Prisma.BlogUpsertArgs>,
+  // ): Prisma.Prisma__BlogClient<Prisma.BlogGetPayload<T>> =>
+  //     // @ts-ignore
+  //     exec({ func: 'upsert', model: 'blog', args }),
+};
+
+const commentClient = {
+  aggregate: <T extends Prisma.CommentAggregateArgs>(
+    args: Prisma.Subset<T, Prisma.CommentAggregateArgs>,
     // @ts-ignore
-    exec({ func: 'upsert', model: 'blog', args }),
+  ): PrismaPromise<Prisma.GetCommentAggregateType<T>> => exec({ func: 'aggregate', model: 'comment', args }),
+  create: <T extends Prisma.CommentCreateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.CommentCreateArgs>,
+  ): Promise<Prisma.Prisma__CommentClient<Prisma.CommentGetPayload<T>>> =>
+    exec({ func: 'create', model: 'comment', args }),
+  count: <T extends Prisma.CommentCountArgs>(
+    args?: Prisma.Subset<T, Prisma.CommentCountArgs>,
+  ): PrismaPromise<
+    T extends Prisma._Record<'select', any>
+      ? T['select'] extends true
+        ? number
+        : Prisma.GetScalarType<T['select'], Prisma.CommentCountAggregateOutputType>
+      : number
+    // @ts-ignore
+  > => exec({ func: 'count', model: 'comment', args }),
+  delete: <T extends Prisma.CommentDeleteArgs>(
+    args: Prisma.SelectSubset<T, Prisma.CommentDeleteArgs>,
+    // @ts-ignore
+  ): Prisma.Prisma__CommentClient<Prisma.CommentGetPayload<T>> => exec({ func: 'delete', model: 'comment', args }),
+  deleteMany: <T extends Prisma.CommentDeleteManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.CommentDeleteManyArgs>,
+    // @ts-ignore
+  ): PrismaPromise<Prisma.BatchPayload> => exec({ func: 'deleteMany', model: 'comment', args }),
+  findFirst: <T extends Prisma.CommentFindFirstArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.CommentFindFirstArgs>,
+  ): Prisma.Prisma__CommentClient<Prisma.CommentGetPayload<T> | null, null> =>
+    // @ts-ignore
+    exec({ func: 'findFirst', model: 'comment', args }),
+  findFirstOrThrow: <T extends Prisma.CommentFindFirstOrThrowArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.CommentFindFirstOrThrowArgs>,
+    // @ts-ignore
+  ): PrismaPromise<Array<Prisma.CommentGetPayload<T>>> => exec({ func: 'findFirstOrThrow', model: 'comment', args }),
+  findMany: <T extends Prisma.CommentFindManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.CommentFindManyArgs>,
+    // @ts-ignore
+  ): PrismaPromise<Array<Prisma.CommentGetPayload<T>>> => exec({ func: 'findMany', model: 'comment', args }),
+  findUnique: <T extends Prisma.CommentFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.CommentFindUniqueArgs>,
+  ): Prisma.Prisma__CommentClient<Prisma.CommentGetPayload<T> | null, null> =>
+    // @ts-ignore
+    exec({ func: 'findUnique', model: 'comment', args }),
+  findUniqueOrThrow: <T extends Prisma.CommentFindUniqueOrThrowArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.CommentFindUniqueOrThrowArgs>,
+  ): Prisma.Prisma__CommentClient<Prisma.CommentGetPayload<T>> =>
+    // @ts-ignore
+    exec({ func: 'findUniqueOrThrow', model: 'comment', args }),
+  groupBy: (args?: Prisma.CommentGroupByArgs) => exec({ func: 'groupBy', model: 'comment', args }),
+  update: <T extends Prisma.CommentUpdateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.CommentUpdateArgs>,
+  ): Prisma.Prisma__CommentClient<Prisma.CommentGetPayload<T>> =>
+    // @ts-ignore
+    exec({ func: 'update', model: 'comment', args }),
+  updateMany: <T extends Prisma.CommentUpdateManyArgs>(
+    args: Prisma.SelectSubset<T, Prisma.CommentUpdateManyArgs>,
+  ): PrismaPromise<Prisma.BatchPayload> =>
+    // @ts-ignore
+    exec({ func: 'updateMany', model: 'comment', args }),
+  // upsert: <T extends Prisma.CommentUpsertArgs>(
+  //     args: Prisma.SelectSubset<T, Prisma.CommentUpsertArgs>,
+  // ): Prisma.Prisma__CommentClient<Prisma.CommentGetPayload<T>> =>
+  //     // @ts-ignore
+  //     exec({ func: 'upsert', model: 'comment', args }),
 };
 
 export default {
   user: userClient,
   blog: blogClient,
+  comment: commentClient,
 };

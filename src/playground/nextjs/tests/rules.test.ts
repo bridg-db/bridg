@@ -1,4 +1,4 @@
-import { Blog, PrismaClient } from '@prisma/client';
+import { Blog, Prisma, PrismaClient, User } from '@prisma/client';
 import bridg from 'tests/bridg/client-db';
 import { setRules } from 'tests/bridg/test-rules';
 import { afterAll, beforeAll, beforeEach, expect, it, test } from 'vitest';
@@ -9,12 +9,15 @@ const TEST_TITLE = 'TEST_BLOG';
 const TEST_TITLE_2 = 'TEST_BLOG_2';
 let testBlog1: Blog;
 let testBlog2: Blog;
+let testUser: User;
 
 beforeEach(async () => {
   setRules({});
   await prisma.blog.deleteMany();
-  testBlog1 = await prisma.blog.create({ data: { title: TEST_TITLE } });
-  testBlog2 = await prisma.blog.create({ data: { title: TEST_TITLE_2 } });
+  await prisma.user.deleteMany();
+  testUser = await prisma.user.create({ data: { email: 'johndoe@gmail.com' } });
+  testBlog1 = await prisma.blog.create({ data: { title: TEST_TITLE, userId: testUser.id } });
+  testBlog2 = await prisma.blog.create({ data: { title: TEST_TITLE_2, userId: testUser.id } });
 });
 
 afterAll(async () => {
@@ -186,3 +189,85 @@ it('Delete rules work with where clauses', async () => {
   expect(await fetchBlog1()).toBeNull();
   expect(await fetchBlog2()).toBeTruthy();
 });
+
+it('Find rules work with nested relations', async () => {
+  // FAIL
+  setRules({ blog: { find: true }, user: { find: false } });
+  await queryFails(bridg.blog.findMany({ include: { user: true } }));
+  await queryFails(bridg.blog.findFirst({ include: { user: true } }));
+  await queryFails(bridg.blog.findFirstOrThrow({ include: { user: true } }));
+  await queryFails(bridg.blog.findUnique({ where: { id: testBlog1.id }, include: { user: true } }));
+  await queryFails(bridg.blog.findUniqueOrThrow({ where: { id: testBlog1.id }, include: { user: true } }));
+
+  // SUCCESS
+  setRules({ blog: { find: true }, user: { find: true } });
+  await querySucceeds(bridg.blog.findMany({ include: { user: true } }), 2);
+  await querySucceeds(bridg.blog.findFirst({ include: { user: true } }));
+  await querySucceeds(bridg.blog.findFirstOrThrow({ include: { user: true } }));
+  await querySucceeds(bridg.blog.findUnique({ where: { id: testBlog1.id }, include: { user: true } }));
+  await querySucceeds(bridg.blog.findUniqueOrThrow({ where: { id: testBlog1.id }, include: { user: true } }));
+
+  // DOUBLE NESTED RELATIONS
+  // FAIL
+  setRules({ blog: { find: true }, user: { find: true }, comment: { find: false } });
+  const include: Prisma.UserInclude = { blogs: { include: { comments: true } } };
+  await queryFails(bridg.user.findMany({ include }));
+  await queryFails(bridg.user.findFirst({ include }));
+  await queryFails(bridg.user.findFirstOrThrow({ include }));
+  await queryFails(bridg.user.findUnique({ where: { id: testBlog1.id }, include }));
+  await queryFails(bridg.user.findUniqueOrThrow({ where: { id: testBlog1.id }, include }));
+
+  //SUCCESS
+  setRules({ blog: { find: true }, user: { find: true }, comment: { find: true } });
+  await querySucceeds(bridg.user.findMany({ include }));
+  await querySucceeds(bridg.user.findFirst({ include }));
+  await querySucceeds(bridg.user.findFirstOrThrow({ include }));
+  await querySucceeds(bridg.user.findUnique({ where: { id: testUser.id }, include }));
+  await querySucceeds(bridg.user.findUniqueOrThrow({ where: { id: testUser.id }, include }));
+});
+
+it('Find rules work on update includes', async () => {
+  // FAIL
+  setRules({ blog: { update: true }, user: { find: false } });
+  await queryFails(bridg.blog.update({ data: { body: '' }, where: { id: testBlog1.id }, include: { user: true } }));
+
+  //  SUCCESS
+  setRules({ blog: { update: true }, user: { find: true } });
+  await querySucceeds(bridg.blog.update({ data: { body: '' }, where: { id: testBlog1.id }, include: { user: true } }));
+});
+
+// TODO: these are not covered yet. vulnerability
+// it('Update rules work on related models', async () => {
+//   // connect, connectOrCreate, create, delete, deleteMany, disconnect, set, update, updateMany, upsert
+//   // FAIL
+//   setRules({ blog: { update: true }, user: { update: false, find: true } });
+//   // child.update
+//   await queryFails(
+//     bridg.blog.update({
+//       data: { body: 'updated', user: { update: { data: { email: 'updated' } } } },
+//       where: { id: testBlog1.id },
+//       include: { user: true },
+//     }),
+//   );
+//   setRules({ blog: { update: true }, comment: { update: false } });
+//   // child.connect
+//   const comment = await bridg.comment.create({ data: { body: 'hello_world' } });
+//   await queryFails(
+//     bridg.blog.update({
+//       data: { body: 'updated', comments: { connect: { id: comment.id } } },
+//       where: { id: testBlog1.id },
+//     }),
+//   );
+
+//   //  SUCCESS
+//   setRules({ blog: { update: true }, user: { update: true } });
+//   await querySucceeds(
+//     bridg.blog.update({ data: { body: '', user: { update: { data: { email: '' } } } }, where: { id: testBlog1.id } }),
+//   );
+//   await querySucceeds(
+//     bridg.blog.update({
+//       data: { body: 'updated', comments: { connect: { id: comment.id } } },
+//       where: { id: testBlog1.id },
+//     }),
+//   );
+// });

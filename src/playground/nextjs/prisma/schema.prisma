@@ -27,11 +27,23 @@ model Blog {
   title String
   body  String?
 
-  published Boolean @default(false)
-  viewCount Int     @default(0)
-  user      User?   @relation(fields: [userId], references: [id])
+  published Boolean   @default(false)
+  viewCount Int       @default(0)
+  user      User?     @relation(fields: [userId], references: [id])
   userId    String?
+  comments  Comment[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  body String
+
+  blogId String?
+  blog   Blog?   @relation(fields: [blogId], references: [id])
+
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

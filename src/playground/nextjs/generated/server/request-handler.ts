@@ -137,46 +137,47 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' |
   update: 'update',
   updateMany: 'update',
   // upsert: 'update',
-};
+}
 
-const MODEL_RELATION_MAP: { [key in Model]: { [key: string]: { model: Model; acceptsWheres: boolean } } } = {
-  user: {
-    blogs: {
-      acceptsWheres: true,
-      model: 'blog',
-    },
+  const MODEL_RELATION_MAP: { [key in Model]: { [key: string]: { model: Model; acceptsWheres: boolean } } } = {
+  "user": {
+    "blogs": {
+      "acceptsWheres": true,
+      "model": "blog"
+    }
   },
-  blog: {
-    user: {
-      acceptsWheres: false,
-      model: 'user',
+  "blog": {
+    "user": {
+      "acceptsWheres": false,
+      "model": "user"
     },
-    comments: {
-      acceptsWheres: true,
-      model: 'comment',
-    },
+    "comments": {
+      "acceptsWheres": true,
+      "model": "comment"
+    }
   },
-  comment: {
-    blog: {
-      acceptsWheres: false,
-      model: 'blog',
-    },
-  },
-};
+  "comment": {
+    "blog": {
+      "acceptsWheres": false,
+      "model": "blog"
+    }
+  }
+}
 
-type OptionalPromise<T> = T | Promise<T>;
-type MethodRulesObject<WhereInput, CreateInput> = Partial<{
-  find: boolean | WhereInput | ((uid?: string) => OptionalPromise<boolean | WhereInput>);
-  update: boolean | WhereInput | ((uid?: string, body?: CreateInput) => OptionalPromise<boolean | WhereInput>);
-  create: boolean | ((uid?: string, body?: CreateInput) => OptionalPromise<boolean>);
-  delete: boolean | WhereInput | ((uid?: string) => OptionalPromise<boolean | WhereInput>);
-}>;
-
-export type DbRules = Partial<{
+  type OptionalPromise<T> = T | Promise<T>;
+  type MethodRulesObject<WhereInput, CreateInput> = Partial<{
+    find: boolean | WhereInput | ((uid?: string) => OptionalPromise<boolean | WhereInput>);
+    update: boolean | WhereInput | ((uid?: string, body?: CreateInput) => OptionalPromise<boolean | WhereInput>);
+    create: boolean | ((uid?: string, body?: CreateInput) => OptionalPromise<boolean>);
+    delete: boolean | WhereInput | ((uid?: string) => OptionalPromise<boolean | WhereInput>);
+  }>;
+  
+  export type DbRules = Partial<{
   user: MethodRulesObject<Prisma.UserWhereInput, Prisma.UserUncheckedCreateInput>;
   blog: MethodRulesObject<Prisma.BlogWhereInput, Prisma.BlogUncheckedCreateInput>;
   comment: MethodRulesObject<Prisma.CommentWhereInput, Prisma.CommentUncheckedCreateInput>;
-}>;
-
-const models = ['user', 'blog', 'comment'] as const;
-type Model = typeof models[number];
+  }>;
+  
+  const models = ['user', 'blog', 'comment'] as const;
+  type Model = typeof models[number];
+  

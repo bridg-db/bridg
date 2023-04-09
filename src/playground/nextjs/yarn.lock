@@ -587,7 +587,7 @@ braces@^3.0.2:
   dependencies:
     fill-range "^7.0.1"
 
-bridg@^1.0.10:
+bridg@^1.0.11:
   version "1.0.11"
   resolved "https://registry.yarnpkg.com/bridg/-/bridg-1.0.11.tgz#f3460c9e68850dc94c61f70eda9bce09cca245dc"
   integrity sha512-/VWc6H/hOaqsXXFD/CPX5ev1olkmEsl30Cib8f1B1iiXP6Q//7FGm24L8tpRoGAWRCGGSd1/z10zrmjAY5udGw==
