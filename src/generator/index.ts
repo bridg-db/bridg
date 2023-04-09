@@ -2,5 +2,7 @@
 import { generateFilesFromSchemaPath } from './generate';
 
 const pathToSchema = process.argv[2];
-if (!pathToSchema) throw new Error(`Error, schema not provided ${pathToSchema}`);
-generateFilesFromSchemaPath(pathToSchema);
+const outputLocation = process.argv[3] || './node_modules/bridg/tmp';
+
+if (!pathToSchema) throw new Error(`Error, schema not provided`);
+generateFilesFromSchemaPath(pathToSchema, outputLocation);

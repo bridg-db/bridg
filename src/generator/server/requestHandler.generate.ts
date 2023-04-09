@@ -144,12 +144,11 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' |
 
 // Currently this is just a static file with no templating,
 // just generating it now bc its likely we'll need to template it eventually
-const generateHandlerFile = (models: string[], schemaStr: string) => {
+const generateHandlerFile = (models: string[], schemaStr: string, outputLocation: string) => {
   const types = generateServerTypes(models, schemaStr);
   const fileContent = `${HANDLER_TEMPLATE}\n${types}`;
 
-  // writeFileSafely(`./node_modules/bridg/dist/package/server/request-handler.ts`, HANDLER_TEMPLATE);
-  writeFileSafely(`./node_modules/bridg/tmp/server/request-handler.ts`, fileContent);
+  writeFileSafely(`${outputLocation}/server/request-handler.ts`, fileContent);
 };
 
 export default generateHandlerFile;

@@ -98,11 +98,11 @@ const *{model}Client = {
 const genModelClient = (model: string) =>
   MODEL_TEMPLATE.replaceAll(`*{model}`, uncapitalize(model)).replaceAll(`*{Model}`, capitalize(model));
 
-export const generateClientDbFile = (models: string[]) => {
+export const generateClientDbFile = (models: string[], outputLocation: string) => {
   const modelClients = models.reduce((acc, model) => `${acc}${genModelClient(model)}`, ``);
   const clientDbCode = `${head}${modelClients}${generateExports(models)}`;
 
   //   writeFileSafely(`${'./node_modules/bridg/dist/package'}/client/db.ts`, clientDbCode);
-  writeFileSafely(`${'./node_modules/bridg/tmp'}/client/db.ts`, clientDbCode);
+  writeFileSafely(`${outputLocation}/client/db.ts`, clientDbCode);
   return clientDbCode;
 };
