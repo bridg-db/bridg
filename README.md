@@ -60,7 +60,9 @@ import { handleRequest } from 'bridg/app/server/request-handler';
 import { PrismaClient } from '@prisma/client';
 
 const db = new PrismaClient();
-const rules = { user: { find: true } };
+
+// allows all requests, don't ship like this, ya dingus
+const rules = { default: true };
 
 export default async function handler(req, res) {
   // Mock authentication, replace with any auth system you want
@@ -76,7 +78,7 @@ export default async function handler(req, res) {
 
 ### Note on applications with separate server / client:
 
-This library has yet to be tested with apps running a server & client in separate repos, but it should 🤷‍♂️ work. You would want to install Bridg and Prisma on your server, run the `generate` script, and copy the Bridg client (`node_modules/bridg/app/client`) and Prisma types to your client application.
+This library has yet to be tested with apps running a server & client as separate projects, but it should 🤷‍♂️ work. You would want to install Bridg and Prisma on your server, run the `generate` script, and copy the Bridg client (`node_modules/bridg/app/client`) and Prisma types to your client application.
 
 ## Querying Your Database
 
@@ -203,6 +205,12 @@ const deleteCount = await prisma.blog.deleteMany({ where: { isPublished: false }
 
 ## Database Rules
 
+> If you want to ignore this during development, you can set your database rules to the following to allow all requests (this is not secure):
+>
+> ```ts
+> export const rules: DbRules = { default: true };
+> ```
+
 Because your database is now available on the frontend, that means anyone who can access your website will have access to your database. Fortunately, we can create custom rules to prevent our queries from being used nefariously 🥷.
 
 Your rules could look something like the following:
@@ -310,5 +318,12 @@ const rules = {
       return isTheSunShining && philliesWinWorldSeries;
     },
   },
+  user: {
+    // model default, used if model.method not provided
+    default: true,
+  }
+  // global default, used if model.method and model.default aren't provided
+  // defaults to 'false' if not provided. set to 'true' only in development
+  default: false,
 };
 ```
