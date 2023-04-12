@@ -229,6 +229,13 @@ export const rules: DbRules = {
   },
   // table2: {},
   // table3: {},...
+  blog: {
+    // model default, used if model.method not provided
+    default: true,
+  }
+  // global default, used if model.method and model.default aren't provided
+  // defaults to 'false' if not provided. set to 'true' only in development
+  default: false,
 };
 ```
 
@@ -318,12 +325,5 @@ const rules = {
       return isTheSunShining && philliesWinWorldSeries;
     },
   },
-  user: {
-    // model default, used if model.method not provided
-    default: true,
-  }
-  // global default, used if model.method and model.default aren't provided
-  // defaults to 'false' if not provided. set to 'true' only in development
-  default: false,
 };
 ```
