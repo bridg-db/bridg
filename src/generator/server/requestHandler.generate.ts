@@ -5,7 +5,7 @@ const HANDLER_TEMPLATE = `import { Prisma, PrismaClient } from '@prisma/client';
 
 export const handleRequest = async (
   requestBody: {
-    model: Model;
+    model: ModelName;
     func: PrismaFunction;
     args?: any;
   },
@@ -23,7 +23,7 @@ export const handleRequest = async (
 
   const applyRulesWheres = async (
     args: { where?: any; include?: any; data?: any },
-    options: { model: Model; acceptsWheres?: boolean; method: 'find' | 'create' | 'update' | 'delete' },
+    options: { model: ModelName; acceptsWheres?: boolean; method: 'find' | 'create' | 'update' | 'delete' },
   ) => {
     const { model, acceptsWheres = true, method } = options;
     const queryValidator = rules[model]?.[method] || false;

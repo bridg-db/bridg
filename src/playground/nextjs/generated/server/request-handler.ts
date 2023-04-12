@@ -2,7 +2,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 
 export const handleRequest = async (
   requestBody: {
-    model: Model;
+    model: ModelName;
     func: PrismaFunction;
     args?: any;
   },
@@ -20,7 +20,7 @@ export const handleRequest = async (
 
   const applyRulesWheres = async (
     args: { where?: any; include?: any; data?: any },
-    options: { model: Model; acceptsWheres?: boolean; method: 'find' | 'create' | 'update' | 'delete' },
+    options: { model: ModelName; acceptsWheres?: boolean; method: 'find' | 'create' | 'update' | 'delete' },
   ) => {
     const { model, acceptsWheres = true, method } = options;
     const queryValidator = rules[model]?.[method] || false;
@@ -139,7 +139,7 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' |
   // upsert: 'update',
 }
 
-  const MODEL_RELATION_MAP: { [key in Model]: { [key: string]: { model: Model; acceptsWheres: boolean } } } = {
+  const MODEL_RELATION_MAP: { [key in ModelName]: { [key: string]: { model: ModelName; acceptsWheres: boolean } } } = {
   "user": {
     "blogs": {
       "acceptsWheres": true,
@@ -165,19 +165,25 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' |
 }
 
   type OptionalPromise<T> = T | Promise<T>;
-  type MethodRulesObject<WhereInput, CreateInput> = Partial<{
-    find: boolean | WhereInput | ((uid?: string) => OptionalPromise<boolean | WhereInput>);
-    update: boolean | WhereInput | ((uid?: string, body?: CreateInput) => OptionalPromise<boolean | WhereInput>);
-    create: boolean | ((uid?: string, body?: CreateInput) => OptionalPromise<boolean>);
-    delete: boolean | WhereInput | ((uid?: string) => OptionalPromise<boolean | WhereInput>);
+
+  type RuleCallback<ReturnType, CreateInput = undefined> = CreateInput extends undefined
+    ? (uid?: string) => OptionalPromise<ReturnType>
+    : (uid?: string, body?: CreateInput) => OptionalPromise<ReturnType>;
+
+  type ModelRules<WhereInput, CreateInput> = Partial<{
+    find: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
+    update: boolean | WhereInput | RuleCallback<boolean | WhereInput, CreateInput>;
+    create: boolean | RuleCallback<boolean, CreateInput>;
+    delete: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
+    default: boolean | RuleCallback<boolean, CreateInput>;
   }>;
-  
+
   export type DbRules = Partial<{
-  user: MethodRulesObject<Prisma.UserWhereInput, Prisma.UserUncheckedCreateInput>;
-  blog: MethodRulesObject<Prisma.BlogWhereInput, Prisma.BlogUncheckedCreateInput>;
-  comment: MethodRulesObject<Prisma.CommentWhereInput, Prisma.CommentUncheckedCreateInput>;
+  user: ModelRules<Prisma.UserWhereInput, Prisma.UserUncheckedCreateInput>;
+  blog: ModelRules<Prisma.BlogWhereInput, Prisma.BlogUncheckedCreateInput>;
+  comment: ModelRules<Prisma.CommentWhereInput, Prisma.CommentUncheckedCreateInput>;
   }>;
   
   const models = ['user', 'blog', 'comment'] as const;
-  type Model = typeof models[number];
+  type ModelName = typeof models[number];
   

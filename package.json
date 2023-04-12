@@ -10,7 +10,8 @@
     "build-client": "tsc ./tmp/**/*.ts --declaration --outDir ./app && rm -rf ./tmp",
     "generate-ts": "node ./dist/generator/index.js ../../../prisma/schema.prisma",
     "prepublish": "npm run build",
-    "generate": "npm run generate-ts && npm run build-client"
+    "generate": "npm run generate-ts && npm run build-client",
+    "generate-test": "npx ts-node ../../generator/index.ts ./prisma/schema.prisma ./generated"
   },
   "keywords": [],
   "author": "Joe Roddy",
