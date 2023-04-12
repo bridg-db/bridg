@@ -2,7 +2,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 
 export const handleRequest = async (
   requestBody: {
-    model: Model;
+    model: ModelName;
     func: PrismaFunction;
     args?: any;
   },
@@ -20,7 +20,7 @@ export const handleRequest = async (
 
   const applyRulesWheres = async (
     args: { where?: any; include?: any; data?: any },
-    options: { model: Model; acceptsWheres?: boolean; method: 'find' | 'create' | 'update' | 'delete' },
+    options: { model: ModelName; acceptsWheres?: boolean; method: 'find' | 'create' | 'update' | 'delete' },
   ) => {
     const { model, acceptsWheres = true, method } = options;
     const queryValidator = rules[model]?.[method] || false;
@@ -139,7 +139,7 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' |
   // upsert: 'update',
 };
 
-const MODEL_RELATION_MAP: { [key in Model]: { [key: string]: { model: Model; acceptsWheres: boolean } } } = {
+const MODEL_RELATION_MAP: { [key in ModelName]: { [key: string]: { model: ModelName; acceptsWheres: boolean } } } = {
   user: {
     blogs: {
       acceptsWheres: true,
@@ -185,4 +185,4 @@ export type DbRules = Partial<{
 }>;
 
 const models = ['user', 'blog', 'comment'] as const;
-type Model = typeof models[number];
+type ModelName = typeof models[number];
