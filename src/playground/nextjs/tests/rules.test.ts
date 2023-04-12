@@ -236,6 +236,28 @@ it('Find rules work on update includes', async () => {
   await querySucceeds(bridg.blog.update({ data: { body: '' }, where: { id: testBlog1.id }, include: { user: true } }));
 });
 
+it('Model method rules supercede default rules', async () => {
+  setRules({ default: true, blog: { find: false, default: true } });
+  await queryFails(bridg.blog.findFirst({ where: { id: testBlog1.id } }));
+
+  setRules({ default: false, blog: { default: false, find: true } });
+  await querySucceeds(bridg.blog.findFirst({ where: { id: testBlog1.id } }));
+});
+it('Default model rules supercede global default rules', async () => {
+  setRules({ default: true, blog: { default: false } });
+  await queryFails(bridg.blog.findFirst({ where: { id: testBlog1.id } }));
+
+  setRules({ default: false, blog: { default: true } });
+  await querySucceeds(bridg.blog.findFirst({ where: { id: testBlog1.id } }));
+});
+it('Global default rules work', async () => {
+  setRules({ default: false });
+  await queryFails(bridg.blog.findFirst({ where: { id: testBlog1.id } }));
+
+  setRules({ default: true });
+  await querySucceeds(bridg.blog.findFirst({ where: { id: testBlog1.id } }));
+});
+
 // TODO: these are not covered yet. vulnerability
 // it('Update rules work on related models', async () => {
 //   // connect, connectOrCreate, create, delete, deleteMany, disconnect, set, update, updateMany, upsert

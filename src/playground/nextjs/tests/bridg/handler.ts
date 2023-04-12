@@ -23,7 +23,15 @@ export const handleRequest = async (
     options: { model: ModelName; acceptsWheres?: boolean; method: 'find' | 'create' | 'update' | 'delete' },
   ) => {
     const { model, acceptsWheres = true, method } = options;
-    const queryValidator = rules[model]?.[method] || false;
+    const modelMethodValidator = rules[model]?.[method];
+    const modelDefaultValidator = rules[model]?.default;
+    // can't use "a || b || c", bc it would inadvertently skip "method:false" rules
+    const queryValidator =
+      modelMethodValidator !== undefined
+        ? modelMethodValidator
+        : modelDefaultValidator !== undefined
+        ? modelDefaultValidator
+        : !!rules.default;
     const ruleWhereOrBool =
       typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
     if (ruleWhereOrBool === false) throw new Error('Unauthorized');
@@ -179,6 +187,7 @@ type ModelRules<WhereInput, CreateInput> = Partial<{
 }>;
 
 export type DbRules = Partial<{
+  default: boolean;
   user: ModelRules<Prisma.UserWhereInput, Prisma.UserUncheckedCreateInput>;
   blog: ModelRules<Prisma.BlogWhereInput, Prisma.BlogUncheckedCreateInput>;
   comment: ModelRules<Prisma.CommentWhereInput, Prisma.CommentUncheckedCreateInput>;

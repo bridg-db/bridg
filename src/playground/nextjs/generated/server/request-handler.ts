@@ -23,7 +23,15 @@ export const handleRequest = async (
     options: { model: ModelName; acceptsWheres?: boolean; method: 'find' | 'create' | 'update' | 'delete' },
   ) => {
     const { model, acceptsWheres = true, method } = options;
-    const queryValidator = rules[model]?.[method] || false;
+    const modelMethodValidator = rules[model]?.[method];
+    const modelDefaultValidator = rules[model]?.default;
+    // can't use "a || b || c", bc it would inadvertently skip "method:false" rules
+    const queryValidator =
+      modelMethodValidator !== undefined
+        ? modelMethodValidator
+        : modelDefaultValidator !== undefined
+        ? modelDefaultValidator
+        : !!rules.default;
     const ruleWhereOrBool =
       typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
     if (ruleWhereOrBool === false) throw new Error('Unauthorized');
@@ -137,53 +145,52 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' |
   update: 'update',
   updateMany: 'update',
   // upsert: 'update',
-}
+};
 
-  const MODEL_RELATION_MAP: { [key in ModelName]: { [key: string]: { model: ModelName; acceptsWheres: boolean } } } = {
-  "user": {
-    "blogs": {
-      "acceptsWheres": true,
-      "model": "blog"
-    }
-  },
-  "blog": {
-    "user": {
-      "acceptsWheres": false,
-      "model": "user"
+const MODEL_RELATION_MAP: { [key in ModelName]: { [key: string]: { model: ModelName; acceptsWheres: boolean } } } = {
+  user: {
+    blogs: {
+      acceptsWheres: true,
+      model: 'blog',
     },
-    "comments": {
-      "acceptsWheres": true,
-      "model": "comment"
-    }
   },
-  "comment": {
-    "blog": {
-      "acceptsWheres": false,
-      "model": "blog"
-    }
-  }
-}
+  blog: {
+    user: {
+      acceptsWheres: false,
+      model: 'user',
+    },
+    comments: {
+      acceptsWheres: true,
+      model: 'comment',
+    },
+  },
+  comment: {
+    blog: {
+      acceptsWheres: false,
+      model: 'blog',
+    },
+  },
+};
 
-  type OptionalPromise<T> = T | Promise<T>;
+type OptionalPromise<T> = T | Promise<T>;
 
-  type RuleCallback<ReturnType, CreateInput = undefined> = CreateInput extends undefined
-    ? (uid?: string) => OptionalPromise<ReturnType>
-    : (uid?: string, body?: CreateInput) => OptionalPromise<ReturnType>;
+type RuleCallback<ReturnType, CreateInput = undefined> = CreateInput extends undefined
+  ? (uid?: string) => OptionalPromise<ReturnType>
+  : (uid?: string, body?: CreateInput) => OptionalPromise<ReturnType>;
 
-  type ModelRules<WhereInput, CreateInput> = Partial<{
-    find: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
-    update: boolean | WhereInput | RuleCallback<boolean | WhereInput, CreateInput>;
-    create: boolean | RuleCallback<boolean, CreateInput>;
-    delete: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
-    default: boolean | RuleCallback<boolean, CreateInput>;
-  }>;
+type ModelRules<WhereInput, CreateInput> = Partial<{
+  find: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
+  update: boolean | WhereInput | RuleCallback<boolean | WhereInput, CreateInput>;
+  create: boolean | RuleCallback<boolean, CreateInput>;
+  delete: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
+  default: boolean | RuleCallback<boolean, CreateInput>;
+}>;
 
-  export type DbRules = Partial<{
+export type DbRules = Partial<{
   user: ModelRules<Prisma.UserWhereInput, Prisma.UserUncheckedCreateInput>;
   blog: ModelRules<Prisma.BlogWhereInput, Prisma.BlogUncheckedCreateInput>;
   comment: ModelRules<Prisma.CommentWhereInput, Prisma.CommentUncheckedCreateInput>;
-  }>;
-  
-  const models = ['user', 'blog', 'comment'] as const;
-  type ModelName = typeof models[number];
-  
+}>;
+
+const models = ['user', 'blog', 'comment'] as const;
+type ModelName = typeof models[number];
