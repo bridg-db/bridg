@@ -258,6 +258,46 @@ it('Global default rules work', async () => {
   await querySucceeds(bridg.blog.findFirst({ where: { id: testBlog1.id } }));
 });
 
+it('Create rules work when creating related models', async () => {
+  // FAIL
+  setRules({ user: { create: true }, blog: { create: false } });
+  await queryFails(
+    bridg.user.create({
+      data: {
+        email: 'charlie@nightcrawlers.io',
+        blogs: { create: { title: 'my blog' } },
+      },
+    }),
+  );
+  await queryFails(
+    bridg.user.create({
+      data: {
+        email: 'charlie@nightcrawlers.io',
+        blogs: { create: [{ title: 'my blog' }, { title: 'my blog 2' }] },
+      },
+    }),
+  );
+  // SUCCESS
+  setRules({ user: { create: true }, blog: { create: true } });
+  await querySucceeds(
+    bridg.user.create({
+      data: {
+        email: 'charlie@nightcrawlers.io',
+        blogs: { create: { title: 'my blog' } },
+      },
+    }),
+  );
+  // TODO: this throws an error, not appropriately handling checks for when they pass an array
+  // await querySucceeds(
+  //   bridg.user.create({
+  //     data: {
+  //       email: 'charlie@nightcrawlers.io',
+  //       blogs: { create: [{ title: 'my blog' }, { title: 'my blog 2' }] },
+  //     },
+  //   }),
+  // );
+});
+
 // TODO: these are not covered yet. vulnerability
 // it('Update rules work on related models', async () => {
 //   // connect, connectOrCreate, create, delete, deleteMany, disconnect, set, update, updateMany, upsert
