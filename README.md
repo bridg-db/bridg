@@ -260,55 +260,55 @@ Validators control whether a particular request will be allowed to execute or no
 
 They can be provided in three ways:
 
-**boolean** - use a boolean when you always know whether a certain request should go through or be blocked
+1. **boolean** - use a boolean when you always know whether a certain request should go through or be blocked
 
-```ts
-tableName {
-    find: false, // blocks all reads on a model
-    create: true // allows any creation for a model
-}
-```
+   ```ts
+   tableName {
+       find: false, // blocks all reads on a model
+       create: true // allows any creation for a model
+   }
+   ```
 
-**where clause** - You can also apply a Prisma where clause for the given model. This clause will be required to be true, along with whatever input is passed from the client request.
+2) **where clause** - You can also apply a Prisma where clause for the given model. This clause will be required to be true, along with whatever input is passed from the client request.
 
-note: `create` does not accept where clauses
+   note: `create` does not accept where clauses
 
-```ts
-blog {
-    // allow reads only on blogs where isPublished = true
-    find: { isPublished: true }
-}
-```
+   ```ts
+   blog {
+       // allow reads only on blogs where isPublished = true
+       find: { isPublished: true }
+   }
+   ```
 
-**callback function** - The most powerful option is a callback function. This will allow you to dynamically authorize requests based on the context of the request. You can also pass an `async` function, and make as many async calls as you want in the validator.
+3) **callback function** - The most powerful option is a callback function. This will allow you to dynamically authorize requests based on the context of the request. You can also pass an `async` function, and make as many async calls as you want in the validator.
 
-**args:**
+   **args:**
 
-`uid`: the id of the user making the request
+   `uid`: the id of the user making the request
 
-`data`: the body data from the request (only available on update, create)
+   `data`: the body data from the request (only available on update, create)
 
-**return value:** `boolean` | `where clause`
+   **return value:** `boolean` | `where clause`
 
-Your callback function should either return a Prisma Where object for the corresponding table, or a boolean indicating whether the request should resolve or not.
+   Your callback function should either return a Prisma Where object for the corresponding table, or a boolean indicating whether the request should resolve or not.
 
-Example:
+Example use of callbacks:
 
 ```ts
 const rules = {
   blog: {
-    // allow reads if the blog is published OR if the user authored the blog
+    // where clause: allow reads if the blog is published OR if the user authored the blog
     find: (uid) => ({ OR: [{ isPublished: true }, { authorId: uid }] }),
 
     // prevent the user from setting their own vote count
     create: (uid, data) => (data.voteCount === 0 ? true : false),
 
     // make an async call to determine if request should resolve
-    // note: this should USUALLY be done via a relational query
+    // note: this should USUALLY be done via a relational query,
     // which only takes 1 trip to the db, but they are not always practical
     delete: async (uid) => {
-      const user = await db.user.findFirst({ where: { id: uid } });
-      return user.isAdmin ? true : false;
+      const userMakingRequest = await db.user.findFirst({ where: { id: uid } });
+      return userMakingRequest.isAdmin ? true : false;
     },
 
     // you can run literally any javascript you want, anything..
