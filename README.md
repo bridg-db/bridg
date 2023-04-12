@@ -110,7 +110,7 @@ const createdUser = await db.user.create({
 });
 
 // create multiple records at once:
-const creationCount = await prisma.user.createMany({
+const creationCount = await db.user.createMany({
   data: [
     { name: 'John', email: 'johndoe@gmail.com' },
     { name: 'Sam', email: 'sam.johnson@outlook.com' },
@@ -181,13 +181,13 @@ For more details on advanced querying, filtering and sorting, [check out this pa
 
 ```ts
 // update a single record
-const updatedData = await prisma.blog.update({
+const updatedData = await db.blog.update({
   where: { id: 'some-id' }, // must use a unique db key to use .update
   data: { title: 'New Blog title' },
 });
 
 // update many records
-const updateCount = await prisma.blog.updateMany({
+const updateCount = await db.blog.updateMany({
   where: { authorId: userId },
   data: { isPublished: true },
 });
@@ -197,10 +197,10 @@ const updateCount = await prisma.blog.updateMany({
 
 ```ts
 // delete a single record.  must use a unique db key to use .delete
-const deletedBlog = await prisma.blog.delete({ where: { id: 'some-id' } });
+const deletedBlog = await db.blog.delete({ where: { id: 'some-id' } });
 
 // delete many records
-const deleteCount = await prisma.blog.deleteMany({ where: { isPublished: false } });
+const deleteCount = await db.blog.deleteMany({ where: { isPublished: false } });
 ```
 
 ## Database Rules
