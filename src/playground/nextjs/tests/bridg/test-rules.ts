@@ -1,4 +1,4 @@
-import { DbRules } from 'bridg/app/server/request-handler';
+import { DbRules } from './handler';
 import fs from 'fs';
 
 // just writing them to file for now to make it easy to update / pass around

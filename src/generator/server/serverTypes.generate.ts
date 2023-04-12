@@ -46,31 +46,35 @@ export const generateServerTypes = (models: string[], schemaStr: string) => {
   models = models || [];
   const innerRules = models.reduce((acc, m) => {
     const Model = capitalize(m);
-    return `${acc}\n  ${uncapitalize(
-      m,
-    )}: MethodRulesObject<Prisma.${Model}WhereInput, Prisma.${Model}UncheckedCreateInput>;`;
+    return `${acc}\n  ${uncapitalize(m)}: ModelRules<Prisma.${Model}WhereInput, Prisma.${Model}UncheckedCreateInput>;`;
   }, ``);
   const modelRelations = generateSchemaRelations(models, schemaStr);
 
   return `
-  const MODEL_RELATION_MAP: { [key in Model]: { [key: string]: { model: Model; acceptsWheres: boolean } } } = ${JSON.stringify(
+  const MODEL_RELATION_MAP: { [key in ModelName]: { [key: string]: { model: ModelName; acceptsWheres: boolean } } } = ${JSON.stringify(
     modelRelations,
     undefined,
     2,
   )}
 
   type OptionalPromise<T> = T | Promise<T>;
-  type MethodRulesObject<WhereInput, CreateInput> = Partial<{
-    find: boolean | WhereInput | ((uid?: string) => OptionalPromise<boolean | WhereInput>);
-    update: boolean | WhereInput | ((uid?: string, body?: CreateInput) => OptionalPromise<boolean | WhereInput>);
-    create: boolean | ((uid?: string, body?: CreateInput) => OptionalPromise<boolean>);
-    delete: boolean | WhereInput | ((uid?: string) => OptionalPromise<boolean | WhereInput>);
+
+  type RuleCallback<ReturnType, CreateInput = undefined> = CreateInput extends undefined
+    ? (uid?: string) => OptionalPromise<ReturnType>
+    : (uid?: string, body?: CreateInput) => OptionalPromise<ReturnType>;
+
+  type ModelRules<WhereInput, CreateInput> = Partial<{
+    find: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
+    update: boolean | WhereInput | RuleCallback<boolean | WhereInput, CreateInput>;
+    create: boolean | RuleCallback<boolean, CreateInput>;
+    delete: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
+    default: boolean | RuleCallback<boolean, CreateInput>;
   }>;
-  
+
   export type DbRules = Partial<{${innerRules}
   }>;
   
   const models = [${models.reduce((acc, m) => `${acc}${acc ? ', ' : ''}'${uncapitalize(m)}'`, ``)}] as const;
-  type Model = typeof models[number];
+  type ModelName = typeof models[number];
   `;
 };
