@@ -47,7 +47,7 @@ export const generateServerTypes = (models: string[], schemaStr: string) => {
   const innerRules = models.reduce((acc, m) => {
     const Model = capitalize(m);
     return `${acc}\n  ${uncapitalize(m)}: ModelRules<Prisma.${Model}WhereInput, Prisma.${Model}UncheckedCreateInput>;`;
-  }, ``);
+  }, `\n  default: boolean;`);
   const modelRelations = generateSchemaRelations(models, schemaStr);
 
   return `

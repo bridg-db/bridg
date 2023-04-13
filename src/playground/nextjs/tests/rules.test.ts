@@ -1,7 +1,7 @@
 import { Blog, Prisma, PrismaClient, User } from '@prisma/client';
 import bridg from 'tests/bridg/client-db';
 import { setRules } from 'tests/bridg/test-rules';
-import { afterAll, beforeAll, beforeEach, expect, it, test } from 'vitest';
+import { afterAll, beforeEach, expect, it } from 'vitest';
 
 const prisma = new PrismaClient();
 
@@ -298,38 +298,183 @@ it('Create rules work when creating related models', async () => {
   // );
 });
 
-// TODO: these are not covered yet. vulnerability
-// it('Update rules work on related models', async () => {
-//   // connect, connectOrCreate, create, delete, deleteMany, disconnect, set, update, updateMany, upsert
-//   // FAIL
-//   setRules({ blog: { update: true }, user: { update: false, find: true } });
-//   // child.update
-//   await queryFails(
-//     bridg.blog.update({
-//       data: { body: 'updated', user: { update: { data: { email: 'updated' } } } },
-//       where: { id: testBlog1.id },
-//       include: { user: true },
-//     }),
-//   );
-//   setRules({ blog: { update: true }, comment: { update: false } });
-//   // child.connect
-//   const comment = await bridg.comment.create({ data: { body: 'hello_world' } });
-//   await queryFails(
-//     bridg.blog.update({
-//       data: { body: 'updated', comments: { connect: { id: comment.id } } },
-//       where: { id: testBlog1.id },
-//     }),
-//   );
+it('Update.relation.update rules working', async () => {
+  const query = () =>
+    bridg.blog.update({
+      data: { body: 'updated', user: { update: { data: { email: 'updated' } } } },
+      where: { id: testBlog1.id },
+    });
 
-//   //  SUCCESS
-//   setRules({ blog: { update: true }, user: { update: true } });
-//   await querySucceeds(
-//     bridg.blog.update({ data: { body: '', user: { update: { data: { email: '' } } } }, where: { id: testBlog1.id } }),
-//   );
-//   await querySucceeds(
-//     bridg.blog.update({
-//       data: { body: 'updated', comments: { connect: { id: comment.id } } },
-//       where: { id: testBlog1.id },
-//     }),
-//   );
-// });
+  // FAIL
+  setRules({ blog: { update: true }, user: { update: false } });
+  await queryFails(query());
+
+  // SUCCESS
+  setRules({ blog: { update: true }, user: { update: true } });
+  await querySucceeds(query());
+
+  const comment = await prisma.comment.create({ data: { body: 'hello_world', blogId: testBlog1.id } });
+  const deepUpdate = () =>
+    bridg.user.update({
+      where: { id: testUser.id },
+      data: {
+        blogs: {
+          update: {
+            where: { id: testBlog1.id },
+            data: {
+              comments: {
+                update: {
+                  data: { body: 'wow' },
+                  where: { id: comment.id },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+  // FAIL
+  setRules({ blog: { update: true }, user: { update: true }, comment: { update: false } });
+  await queryFails(deepUpdate());
+
+  // SUCCESS
+  setRules({ blog: { update: true }, user: { update: true }, comment: { update: true } });
+  await querySucceeds(deepUpdate());
+});
+
+it('Update.relation.updateMany rules working', async () => {
+  const query = () =>
+    bridg.user.update({
+      data: { blogs: { updateMany: { data: { body: 'cool' }, where: {} } } },
+      where: { id: testUser.id },
+    });
+
+  // FAIL
+  setRules({ blog: { update: false }, user: { update: true } });
+  await queryFails(query());
+
+  //  SUCCESS
+  setRules({ blog: { update: true }, user: { update: true } });
+  await querySucceeds(query());
+});
+
+it('Update.relation.connect rules working', async () => {
+  const query = () =>
+    bridg.blog.update({
+      data: { body: 'updated', comments: { connect: { id: comment.id } } },
+      where: { id: testBlog1.id },
+    });
+  const comment = await prisma.comment.create({ data: { body: 'hello_world' } });
+
+  // FAIL
+  setRules({ blog: { update: true }, comment: { update: false } });
+  await queryFails(query());
+
+  //  SUCCESS
+  setRules({ blog: { update: true }, comment: { update: true } });
+  await querySucceeds(query());
+});
+
+it('Update.relation.create rules working', async () => {
+  const query = () =>
+    bridg.blog.update({
+      data: { body: 'updated', comments: { create: { body: 'hi' } } },
+      where: { id: testBlog1.id },
+    });
+
+  // FAIL
+  setRules({ blog: { update: true }, comment: { create: false } });
+  await queryFails(query());
+
+  //  SUCCESS
+  setRules({ blog: { update: true }, comment: { create: true } });
+  await querySucceeds(query());
+});
+
+it('Update.relation.delete rules working', async () => {
+  const comment = await prisma.comment.create({ data: { body: 'hello_world', blogId: testBlog1.id } });
+  const query = () =>
+    bridg.blog.update({
+      data: { body: 'updated', comments: { delete: { id: comment.id } } },
+      where: { id: testBlog1.id },
+    });
+
+  // FAIL
+  setRules({ blog: { update: true }, comment: { delete: false } });
+  await queryFails(query());
+
+  //  SUCCESS
+  setRules({ blog: { update: true }, comment: { delete: true } });
+  await querySucceeds(query());
+});
+
+it('Update.relation.deleteMany rules working', async () => {
+  const query = () =>
+    bridg.blog.update({
+      data: { body: 'updated', comments: { deleteMany: {} } },
+      where: { id: testBlog1.id },
+    });
+
+  // FAIL
+  setRules({ blog: { update: true }, comment: { delete: false } });
+  await queryFails(query());
+
+  //  SUCCESS
+  setRules({ blog: { update: true }, comment: { delete: true } });
+  await querySucceeds(query());
+});
+
+it('Update.relation.connectOrCreate throws error (not supported)', async () => {
+  const query = () =>
+    bridg.blog.update({
+      data: { body: 'updated', comments: { connectOrCreate: { create: { body: '' }, where: { id: '' } } } },
+      where: { id: testBlog1.id },
+    });
+
+  // FAIL
+  setRules({ blog: { update: true }, comment: { update: true } });
+  await queryFails(query());
+});
+
+it('Update.relation.disconnect throws error (not supported)', async () => {
+  const comment = await prisma.comment.create({ data: { body: 'hello_world', blogId: testBlog1.id } });
+  const query = () =>
+    bridg.blog.update({
+      data: { body: 'updated', comments: { disconnect: [{ id: comment.id }] } },
+      where: { id: testBlog1.id },
+    });
+
+  // FAIL
+  setRules({ blog: { update: true }, comment: { update: true } });
+  await queryFails(query());
+});
+
+it('Update.relation.set throws error (not supported)', async () => {
+  const comment = await prisma.comment.create({ data: { body: 'hello_world', blogId: testBlog1.id } });
+  const query = () =>
+    bridg.blog.update({
+      data: { body: 'updated', comments: { set: [{ id: comment.id }] } },
+      where: { id: testBlog1.id },
+    });
+
+  // FAIL
+  setRules({ blog: { update: true }, comment: { update: true } });
+  await queryFails(query());
+});
+
+it('Update.relation.upsert throws error (not supported)', async () => {
+  const comment = await prisma.comment.create({ data: { body: 'hello_world', blogId: testBlog1.id } });
+  const query = () =>
+    bridg.blog.update({
+      data: {
+        body: 'updated',
+        comments: { upsert: { create: { body: 'a' }, update: { body: 'b' }, where: { id: comment.id } } },
+      },
+      where: { id: testBlog1.id },
+    });
+
+  // FAIL
+  setRules({ default: true });
+  await queryFails(query());
+});
