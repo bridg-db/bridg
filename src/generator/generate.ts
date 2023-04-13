@@ -11,6 +11,14 @@ export const generateFilesFromSchemaPath = (pathToSchema: string, outputLocation
 
 export const generateFiles = (schemaStr: string, outputLocation: string) => {
   if (!schemaStr) throw new Error(`Schema not provided`);
+  if (!schemaStr.match(/.+["']extendedWhereUnique["'].+/g)) {
+    console.error(`ERROR: Ensure you've added 'extendedWhereUnique' to your schema.prisma:
+
+generator client {
+    provider        = "your-provider"
+    previewFeatures = ["extendedWhereUnique"]
+}`);
+  }
   const models = parseModelNamesFromSchema(schemaStr);
 
   generateClientDbFile(models, outputLocation);
