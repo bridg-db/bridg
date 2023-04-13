@@ -29,12 +29,7 @@ export const handleRequest = async (
     const modelMethodValidator = rules[model]?.[method];
     const modelDefaultValidator = rules[model]?.default;
     // can't use "a || b || c", bc it would inadvertently skip "method:false" rules
-    const queryValidator =
-      modelMethodValidator !== undefined
-        ? modelMethodValidator
-        : modelDefaultValidator !== undefined
-        ? modelDefaultValidator
-        : !!rules.default;
+    const queryValidator = modelMethodValidator ?? modelDefaultValidator ?? !!rules.default;
     const ruleWhereOrBool =
       typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
     if (ruleWhereOrBool === false) throw new Error('Unauthorized');
