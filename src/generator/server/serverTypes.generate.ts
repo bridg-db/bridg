@@ -23,11 +23,11 @@ export const generateSchemaRelations = (models: string[], schemaStr: string) => 
     const relations = modelFieldLines.reduce((acc, line) => {
       let acceptsWheres = false;
       let [field, fieldType] = line.split(/\s+/);
-      fieldType =
-        fieldType.charAt(fieldType.length - 1) === '?' ? fieldType.substring(0, fieldType.length - 1) : fieldType;
-
       if (fieldType.endsWith('[]')) {
         fieldType = fieldType.slice(0, fieldType.length - 2);
+        acceptsWheres = true;
+      } else if (fieldType.endsWith('?')) {
+        fieldType = fieldType.slice(0, fieldType.length - 1);
         acceptsWheres = true;
       }
 
