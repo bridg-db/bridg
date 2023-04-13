@@ -6,8 +6,6 @@ Bridg let's you query your database from the client, like Firebase or Supabase, 
 [Querying Your Database](#querying-your-database)  
 [Protecting Your Data](#database-rules)
 
-This library is **not** quite ready for production. There are a few known vulnerabilities with database rules. If you stumble upon a vulnerability, please 🙏 [create an issue](https://github.com/JoeRoddy/bridg/issues/new) with a detailed example so it can be fixed.
-
 ### Supported Databases
 
 MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQL, MariaDB, AWS Aurora, CockroachDB
@@ -327,3 +325,9 @@ const rules = {
   },
 };
 ```
+
+### Rules stress testing
+
+There may be undiscovered edgecases where an attacker could circumvent our database rules and access data that they shouldn't be allowed to. Here's a [previous example](https://github.com/JoeRoddy/bridg/issues/2) for reference.
+
+If you stumble upon something like this, please 🙏 [create an issue](https://github.com/JoeRoddy/bridg/issues/new) with a detailed example, so it can be fixed.
