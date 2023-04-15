@@ -16,9 +16,8 @@ MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQ
 
 [Next.js barebones setup](https://github.com/JoeRoddy/bridg-example-nextjs) - Simple Next.js example with SQLite database
 
-- [Codesandbox for this^ project](https://codesandbox.io/p/github/JoeRoddy/bridg-examples-nextjs/draft/laughing-alex?f[…]6s78wfs%2522%255D%252C%2522hideCodeEditor%2522%253Afalse%257D)
-  - Will need to open up new terminal tab and run `npm run generate`
-  - fails to load like 25% of the time, (I think bc of SQLite), just a heads up
+- [Codesandbox for this^ project](https://codesandbox.io/p/sandbox/inspiring-lake-e7w5cg?file=%2Fsrc%2Fpages%2Findex.tsx)
+  - fails to load some amount of the time, (I think because of SQLite), just a heads up
 
 [Blogging app](https://github.com/JoeRoddy/bridg-example-nextjs-auth-blogs) - Next.js, next-auth authentication, CRUD examples, SQLite
 
