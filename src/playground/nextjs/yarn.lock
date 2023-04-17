@@ -587,10 +587,10 @@ braces@^3.0.2:
   dependencies:
     fill-range "^7.0.1"
 
-bridg@^1.0.14:
-  version "1.0.14"
-  resolved "https://registry.yarnpkg.com/bridg/-/bridg-1.0.14.tgz#5df54be95ca9afcd78e5f71e35c0fa46ece721f5"
-  integrity sha512-oUvoofhYUnhdDEIH0acqwiV30PcYvhVIWjB16/r4D97iofGpmDKuEaH+bIsxE0njwWGU8zLW+FaFtO6/uOJ6pw==
+bridg@^1.0.15:
+  version "1.0.15"
+  resolved "https://registry.yarnpkg.com/bridg/-/bridg-1.0.15.tgz#4caa2b0fc565d6021539e2113528892ea1fee67a"
+  integrity sha512-fPtAR0ZO3BgjEcJOr90FFrgD+ICXk21Kd98CEdUgjsxhoxpc9s+iARL63YSyKpPRtagdrTaWJ26VAFUQBxz1Dw==
   dependencies:
     strip-comments "^2.0.1"
 

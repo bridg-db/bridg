@@ -4,11 +4,11 @@ import { DbRules } from 'bridg/app/server/request-handler';
 import { useAsync } from '@/useAsync';
 
 const BridgExample: NextPage = ({}) => {
-  const data = useAsync(() =>
+  const [data] = useAsync(() =>
     // Query your DB from the frontend 😎
     db.user.findMany({
       // filter your results
-      where: { email: { contains: '@prisma.io' } },
+      where: { email: {} },
       // include related data
       include: { blogs: { where: {} } },
     }),
