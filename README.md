@@ -38,17 +38,18 @@ generator client {
 ```
 
 2. Install Bridg: `npm install bridg`
-3. Add the following script to your `package.json` (WIP 😅, will be moved to a cli):
+3. Add the following script to your `package.json` :
 
 ```json
 {
   "scripts": {
-    "generate": "npx prisma generate && node ./node_modules/bridg/dist/generator/index.js ./prisma/schema.prisma && npm explore bridg -- npm run build-client"
+    "generate": "npx prisma generate && npm explore bridg -- npm run generate"
   }
 }
 ```
 
-4. `npm run generate`
+4. Generate the client: `npm run generate`
+   - This will need to be ran any time you change your DB schema
 5. Expose an API endpoint at `/api/bridg` to handle requests:
 
 ```ts
