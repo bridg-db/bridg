@@ -8,7 +8,7 @@
     "test": "npx vitest",
     "build": "tsc --project ./tsconfig.build.json",
     "build-client": "tsc ./tmp/**/*.ts --declaration --outDir ./app && rm -rf ./tmp",
-    "generate-ts": "node ./dist/generator/index.js ../../../prisma/schema.prisma",
+    "generate-ts": "node ./dist/generator/index.js ../../../prisma/schema.prisma ./tmp",
     "prepublish": "npm run build",
     "generate": "npm run generate-ts && npm run build-client"
   },
