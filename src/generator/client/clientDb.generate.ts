@@ -7,14 +7,14 @@ const generateExports = (models: string[]) => {
   return `\nexport default {${exports}\n};`;
 };
 
-const head = `
+const getHead = (apiLocation = '/api/bridg') => `
   import { Prisma } from '@prisma/client';
   
   declare const prisma: unique symbol;
   type PrismaPromise<A> = Promise<A> & { [prisma]: true };
   
   export const exec = ({ model, args, func = 'findMany' }: { model: string; args?: {}; func: string }) =>
-  fetch('/api/bridg', {
+  fetch('${apiLocation}', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, args, func }),
@@ -98,9 +98,9 @@ const *{model}Client = {
 const genModelClient = (model: string) =>
   MODEL_TEMPLATE.replaceAll(`*{model}`, uncapitalize(model)).replaceAll(`*{Model}`, capitalize(model));
 
-export const generateClientDbFile = (models: string[], outputLocation: string) => {
+export const generateClientDbFile = (models: string[], outputLocation: string, apiLocation: string) => {
   const modelClients = models.reduce((acc, model) => `${acc}${genModelClient(model)}`, ``);
-  const clientDbCode = `${head}${modelClients}${generateExports(models)}`;
+  const clientDbCode = `${getHead(apiLocation)}${modelClients}${generateExports(models)}`;
 
   //   writeFileSafely(`${'./node_modules/bridg/dist/package'}/client/db.ts`, clientDbCode);
   writeFileSafely(`${outputLocation}/client/db.ts`, clientDbCode);

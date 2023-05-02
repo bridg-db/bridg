@@ -1,8 +1,14 @@
 // npx ts-node -O '{"module":"commonjs"}' ./index.ts
 import { generateFilesFromSchemaPath } from './generate';
 
-const pathToSchema = process.argv[2];
-const outputLocation = process.argv[3] || './node_modules/bridg/tmp';
+const getArgValue = (arg: string, args: string[]) => {
+  const index = args.indexOf(`--${arg}`);
+  return index > -1 ? args[index + 1] : null;
+};
+
+const [pathToSchema, ...args] = process.argv.slice(2);
+const outputLocation = getArgValue('outdir', args) || './node_modules/bridg/tmp';
+const apiLocation = getArgValue('api', args) || '/api/bridg';
 
 if (!pathToSchema) throw new Error(`Error, schema not provided`);
-generateFilesFromSchemaPath(pathToSchema, outputLocation);
+generateFilesFromSchemaPath(pathToSchema, outputLocation, apiLocation);
