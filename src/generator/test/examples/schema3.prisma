@@ -55,3 +55,12 @@ model Error {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }
+
+// model CommentedModelShouldntGetParsed {
+//     fakeField String
+//     // user User?
+
+//     id        String   @id @default(cuid())
+//     createdAt DateTime @default(now())
+//     updatedAt DateTime @updatedAt
+// }

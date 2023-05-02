@@ -1,3 +1,4 @@
+import strip from 'strip-comments';
 import { generateClientDbFile } from '../generator/client/clientDb.generate';
 import { readFileAsString } from '../utils/file.util';
 import generateHandler from './server/requestHandler.generate';
@@ -19,8 +20,9 @@ generator client {
     previewFeatures = ["extendedWhereUnique"]
 }`);
   }
-  const models = parseModelNamesFromSchema(schemaStr);
 
+  schemaStr = strip(schemaStr);
+  const models = parseModelNamesFromSchema(schemaStr);
   generateClientDbFile(models, outputLocation);
   generateHandler(models, schemaStr, outputLocation);
 };

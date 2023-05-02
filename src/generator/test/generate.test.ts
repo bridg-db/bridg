@@ -12,7 +12,7 @@ const schema4 = readFileAsString('src/generator/test/examples/schema4.prisma');
 it('parses model names', () => {
   expect(parseModelNamesFromSchema(schema1)).toStrictEqual(['User', 'Blog']);
   expect(parseModelNamesFromSchema(schema2)).toStrictEqual(['User', 'Blog', 'Post']);
-  expect(parseModelNamesFromSchema(schema3)).toStrictEqual(['User', 'Blog', 'Post', 'Comment', 'Error']);
+  expect(parseModelNamesFromSchema(strip(schema3))).toStrictEqual(['User', 'Blog', 'Post', 'Comment', 'Error']);
 });
 
 it('strips comments', () => {
