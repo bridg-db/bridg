@@ -19,9 +19,9 @@ MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQ
 - [Codesandbox for this^ project](https://codesandbox.io/p/sandbox/inspiring-lake-e7w5cg?file=%2Fsrc%2Fpages%2Findex.tsx)
   - fails to load some amount of the time, (I think because of SQLite), just a heads up
 
-[Blogging app](https://github.com/JoeRoddy/bridg-example-nextjs-auth-blogs) - Next.js, next-auth authentication, CRUD examples, SQLite
+[Vue.js / Nuxt setup](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database
 
-Next.js and React are not required to use Bridg. Bridg should work with any JS or TS project.
+[Blogging app](https://github.com/JoeRoddy/bridg-example-nextjs-auth-blogs) - Next.js, next-auth authentication, CRUD examples, SQLite
 
 _Want an example project for your favorite framework? Feel free to [create an issue](https://github.com/JoeRoddy/bridg/issues/new), or a PR with a sample._
 
