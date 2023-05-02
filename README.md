@@ -2,6 +2,17 @@
 
 Bridg let's you query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
 
+```tsx
+<input
+  placeholder="Search for blogs.."
+  onChange={async (e) => {
+    const query = e.target.value;
+    const blogs = await db.blog.findMany({ where: { title: { contains: query } } });
+    setSearchResults(blogs);
+  }}
+/>
+```
+
 [Getting Started](#getting-started)  
 [Querying Your Database](#querying-your-database)  
 [Protecting Your Data](#database-rules)
