@@ -25,15 +25,13 @@ MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQ
 
 ### Example Projects
 
-[Next.js (basic)](https://github.com/JoeRoddy/bridg-example-nextjs) Simple Next.js example with SQLite database
-
-- [Codesandbox^](https://codesandbox.io/p/sandbox/inspiring-lake-e7w5cg?file=%2Fsrc%2Fpages%2Findex.tsx)
+[Next.js (basic)](https://github.com/JoeRoddy/bridg-example-nextjs) Simple Next.js example with SQLite database ([Codesandbox](https://codesandbox.io/p/sandbox/inspiring-lake-e7w5cg?file=%2Fsrc%2Fpages%2Findex.tsx))
 
 [Next.js (blogging app)](https://github.com/JoeRoddy/bridg-example-nextjs-auth-blogs) - Next.js, next-auth authentication, CRUD examples, SQLite
 
-[Vue.js](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database
+[create-react-app (serverless)](https://github.com/JoeRoddy/bridg-example-cra) - CRA + Postgres + Netlify function (for Bridg)
 
-- [Codesandbox^](https://codesandbox.io/p/sandbox/bridg-example-nuxt-dcwcs3?file=%2Fcomponents%2FTutorial.vue&selection=%5B%7B%22endColumn%22%3A14%2C%22endLineNumber%22%3A12%2C%22startColumn%22%3A14%2C%22startLineNumber%22%3A12%7D%5D)
+[Vue.js](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database ([Codesandbox](https://codesandbox.io/p/sandbox/bridg-example-nuxt-dcwcs3?file=%2Fcomponents%2FTutorial.vue&selection=%5B%7B%22endColumn%22%3A14%2C%22endLineNumber%22%3A12%2C%22startColumn%22%3A14%2C%22startLineNumber%22%3A12%7D%5D))
 
 _Want an example project for your favorite framework? Feel free to [create an issue](https://github.com/JoeRoddy/bridg/issues/new), or a PR with a sample._
 
