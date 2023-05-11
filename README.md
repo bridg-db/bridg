@@ -1,5 +1,7 @@
 # Bridg - Query your DB directly from the frontend
 
+[![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/zHCvaJS4P4)
+
 Bridg let's you query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
 
 ```tsx
