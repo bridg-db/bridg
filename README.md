@@ -35,7 +35,7 @@ MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQ
 
 [React Native](https://github.com/JoeRoddy/bridg-example-expo) - Expo App + Postgres + Netlify
 
-[Vue.js](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database ([Codesandbox](https://codesandbox.io/p/sandbox/bridg-example-nuxt-dcwcs3?file=%2Fcomponents%2FTutorial.vue&selection=%5B%7B%22endColumn%22%3A14%2C%22endLineNumber%22%3A12%2C%22startColumn%22%3A14%2C%22startLineNumber%22%3A12%7D%5D))
+[Vue.js](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database
 
 _Want an example project for your favorite framework? Feel free to [create an issue](https://github.com/JoeRoddy/bridg/issues/new), or a PR with a sample._
 
