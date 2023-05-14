@@ -1,5 +1,5 @@
 import { NextPage } from 'next';
-import db from 'bridg/index';
+import db from 'bridg';
 import { DbRules } from 'bridg/server/request-handler';
 import { useAsync } from '@/useAsync';
 
