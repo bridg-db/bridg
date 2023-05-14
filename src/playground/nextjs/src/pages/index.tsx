@@ -1,6 +1,6 @@
 import { NextPage } from 'next';
-import db from 'bridg/app/client/db';
-import { DbRules } from 'bridg/app/server/request-handler';
+import db from 'bridg/index';
+import { DbRules } from 'bridg/server/request-handler';
 import { useAsync } from '@/useAsync';
 
 const BridgExample: NextPage = ({}) => {

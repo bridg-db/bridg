@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import db from 'prisma/db';
-import { handleRequest } from 'bridg/app/server/request-handler';
+import { handleRequest } from 'bridg/server/request-handler';
 
 import { dbRules } from '@/pages';
 

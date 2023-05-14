@@ -2,8 +2,8 @@
   "name": "bridg",
   "version": "1.0.24",
   "description": "Query your database from any JavaScript frontend",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "npx vitest",
     "build": "tsc --project ./tsconfig.build.json",
