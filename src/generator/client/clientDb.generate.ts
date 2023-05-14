@@ -103,6 +103,6 @@ export const generateClientDbFile = (models: string[], outputLocation: string, a
   const clientDbCode = `${getHead(apiLocation)}${modelClients}${generateExports(models)}`;
 
   //   writeFileSafely(`${'./node_modules/bridg/dist/package'}/client/db.ts`, clientDbCode);
-  writeFileSafely(`${outputLocation}/client/db.ts`, clientDbCode);
+  writeFileSafely(`${outputLocation}/client/index.ts`, clientDbCode);
   return clientDbCode;
 };
