@@ -155,7 +155,7 @@ const funcOptions = [
   'updateMany',
   // 'upsert',
 ] as const;
-type PrismaFunction = typeof funcOptions[number];
+type PrismaFunction = (typeof funcOptions)[number];
 
 const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' | 'delete' } = {
   aggregate: 'find',
@@ -214,10 +214,11 @@ type ModelRules<WhereInput, CreateInput> = Partial<{
 }>;
 
 export type DbRules = Partial<{
+  default: boolean;
   user: ModelRules<Prisma.UserWhereInput, Prisma.UserUncheckedCreateInput>;
   blog: ModelRules<Prisma.BlogWhereInput, Prisma.BlogUncheckedCreateInput>;
   comment: ModelRules<Prisma.CommentWhereInput, Prisma.CommentUncheckedCreateInput>;
 }>;
 
 const models = ['user', 'blog', 'comment'] as const;
-type ModelName = typeof models[number];
+type ModelName = (typeof models)[number];

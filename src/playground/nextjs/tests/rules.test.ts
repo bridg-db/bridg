@@ -230,10 +230,40 @@ it('Find rules work on update includes', async () => {
   // FAIL
   setRules({ blog: { update: true }, user: { find: false } });
   await queryFails(bridg.blog.update({ data: { body: '' }, where: { id: testBlog1.id }, include: { user: true } }));
+  // DEEP
+  setRules({ blog: { find: true }, user: { update: true }, comment: { find: false } });
+  await queryFails(
+    bridg.user.update({ data: {}, where: { id: testUser.id }, include: { blogs: { include: { comments: true } } } }),
+  );
 
-  //  SUCCESS
+  // SUCCESS
   setRules({ blog: { update: true }, user: { find: true } });
   await querySucceeds(bridg.blog.update({ data: { body: '' }, where: { id: testBlog1.id }, include: { user: true } }));
+  // DEEP
+  setRules({ blog: { find: true }, user: { update: true }, comment: { find: true } });
+  await querySucceeds(
+    bridg.user.update({ data: {}, where: { id: testUser.id }, include: { blogs: { include: { comments: true } } } }),
+  );
+});
+
+it('Find rules work on delete includes', async () => {
+  // FAIL
+  setRules({ blog: { delete: true }, user: { find: false } });
+  await queryFails(bridg.blog.delete({ where: { id: testBlog1.id }, include: { user: true } }));
+  // DEEP
+  setRules({ blog: { find: true }, user: { delete: true }, comment: { find: false } });
+  await queryFails(
+    bridg.user.delete({ where: { id: testUser.id }, include: { blogs: { include: { comments: true } } } }),
+  );
+
+  // SUCCESS
+  setRules({ blog: { delete: true }, user: { find: true } });
+  await querySucceeds(bridg.blog.delete({ where: { id: testBlog1.id }, include: { user: true } }));
+  // DEEP
+  setRules({ blog: { find: true }, user: { delete: true }, comment: { find: true } });
+  await querySucceeds(
+    bridg.user.delete({ where: { id: testUser.id }, include: { blogs: { include: { comments: true } } } }),
+  );
 });
 
 it('Model method rules supercede default rules', async () => {
