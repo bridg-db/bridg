@@ -1,6 +1,5 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { handleRequest } from './handler';
-import { PrismaClient } from '@prisma/client';
 import { getRules } from './test-rules';
 
 declare const prisma: unique symbol;
@@ -13,8 +12,7 @@ async function exec({ model, args, func = 'findMany' }: { model: string; args?: 
 
   // @ts-ignore
   return handleRequest({ model, args, func }, { db: client, rules, uid: '' }).then(async (res) => {
-    if (res.status !== 200)
-      throw new Error(`Bridg query on model "${model}"${res?.data?.error && `: ${res?.data?.error}`}`);
+    if (res.status !== 200) throw new Error(res.data?.error || '');
 
     return res.data;
   });

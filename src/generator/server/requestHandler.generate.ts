@@ -1,5 +1,5 @@
-import { generateServerTypes } from './serverTypes.generate';
 import { writeFileSafely } from '../../utils/file.util';
+import { generateServerTypes } from './serverTypes.generate';
 
 const HANDLER_TEMPLATE = `import { Prisma, PrismaClient } from '@prisma/client';
 
@@ -16,7 +16,7 @@ export const handleRequest = async (
   },
 ) => {
   let { model, func, args } = requestBody;
-  if (!models.includes(model)) return { status: 401, data: { error: 'Unauthorized' } };
+  if (!models.includes(model)) return { status: 401, data: { error: 'Unauthorized', model } };
   args = args || {};
   const { db, uid, rules } = config;
   const method = FUNC_METHOD_MAP[func];
@@ -32,15 +32,15 @@ export const handleRequest = async (
     const queryValidator = modelMethodValidator ?? modelDefaultValidator ?? !!rules.default;
     const ruleWhereOrBool =
       typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
-    if (ruleWhereOrBool === false) throw new Error('Unauthorized');
-    if (typeof ruleWhereOrBool === 'object' && !acceptsWheres) {
+      if (ruleWhereOrBool === false) throw { message: 'Unauthorized', data: { model } };
+      if (typeof ruleWhereOrBool === 'object' && !acceptsWheres) {
       console.error(
         \`Rule error on nested model: "\${model}".  Cannot apply prisma where clauses to N-1 or 1-1 required relationships, only 1-N.
 More info: https://github.com/prisma/prisma/issues/15837#issuecomment-1290404982
 
 To fix this until issue is resolved: Change "\${model}" db rules to not rely on where clauses, OR for N-1 relationships, invert the include so the "\${model}" model is including the many table. (N-1 => 1-N)\`,
       );
-      throw new Error('Unauthorized');
+      throw { message: 'Unauthorized', data: { model } };
       // don't accept wheres for create
     } else if (method !== 'create') {
       if (ruleWhereOrBool === true && !acceptsWheres) {
@@ -127,7 +127,11 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
   try {
     await applyRulesWheres(args, { model, method });
   } catch (err: any) {
-    return { status: 401, data: { error: 'Unauthorized' } };
+    if (err?.message === 'Unauthorized') {
+      return { status: 401, data: { error: \`Unauthorized Bridg query on model: $\{err?.data?.model}\` } };
+    } else {
+      return { status: 400, data: { error: \`Error executing Bridg query: $\{err?.message}\` } };\$
+    }
   }
 
   let data;

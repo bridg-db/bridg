@@ -20,7 +20,7 @@ const getHead = (apiLocation = '/api/bridg') => `
     body: JSON.stringify({ model, args, func }),
   }).then(async (res) => {
     const json = await res.json();
-    if (res.status !== 200) throw new Error(\`Bridg query on model "\${model}"\${json.error && \`: \${json.error}\`}\`);
+    if (res.status !== 200) throw new Error(res.data?.error || '');
 
     return json;
   });

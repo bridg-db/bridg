@@ -1,9 +1,9 @@
-import { Blog, Prisma, PrismaClient, User } from '@prisma/client';
+import { Blog, Prisma, User } from '@prisma/client';
+import prisma from 'prisma/db';
 import bridg from 'tests/bridg/client-db';
 import { setRules } from 'tests/bridg/test-rules';
+import { resetDbData } from 'tests/utils/reset-db-data';
 import { afterAll, beforeEach, expect, it } from 'vitest';
-
-const prisma = new PrismaClient();
 
 const TEST_TITLE = 'TEST_BLOG';
 const TEST_TITLE_2 = 'TEST_BLOG_2';
@@ -13,11 +13,11 @@ let testUser: User;
 
 beforeEach(async () => {
   setRules({});
-  await prisma.blog.deleteMany();
-  await prisma.user.deleteMany();
+  await resetDbData();
   testUser = await prisma.user.create({ data: { email: 'johndoe@gmail.com' } });
-  testBlog1 = await prisma.blog.create({ data: { title: TEST_TITLE, userId: testUser.id } });
-  testBlog2 = await prisma.blog.create({ data: { title: TEST_TITLE_2, userId: testUser.id } });
+  const blogCreate = { userId: testUser.id, comments: { create: { body: 'test-comment' } } };
+  testBlog1 = await prisma.blog.create({ data: { title: TEST_TITLE, ...blogCreate } });
+  testBlog2 = await prisma.blog.create({ data: { title: TEST_TITLE_2, ...blogCreate } });
 });
 
 afterAll(async () => {
