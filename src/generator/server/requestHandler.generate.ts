@@ -130,7 +130,7 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
     if (err?.message === 'Unauthorized') {
       return { status: 401, data: { error: \`Unauthorized Bridg query on model: $\{err?.data?.model}\` } };
     } else {
-      return { status: 400, data: { error: \`Error executing Bridg query: $\{err?.message}\` } };\$
+      return { status: 400, data: { error: \`Error executing Bridg query: $\{err?.message}\` } };
     }
   }
 
