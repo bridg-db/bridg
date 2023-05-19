@@ -13,7 +13,7 @@ export const handleRequest = async (
   },
 ) => {
   let { model, func, args } = requestBody;
-  if (!models.includes(model)) return { status: 401, data: { error: 'Unauthorized' } };
+  if (!models.includes(model)) return { status: 401, data: { error: 'Unauthorized', model } };
   args = args || {};
   const { db, uid, rules } = config;
   const method = FUNC_METHOD_MAP[func];
@@ -29,15 +29,15 @@ export const handleRequest = async (
     const queryValidator = modelMethodValidator ?? modelDefaultValidator ?? !!rules.default;
     const ruleWhereOrBool =
       typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
-    if (ruleWhereOrBool === false) throw new Error('Unauthorized');
-    if (typeof ruleWhereOrBool === 'object' && !acceptsWheres) {
+      if (ruleWhereOrBool === false) throw { message: 'Unauthorized', data: { model } };
+      if (typeof ruleWhereOrBool === 'object' && !acceptsWheres) {
       console.error(
         `Rule error on nested model: "${model}".  Cannot apply prisma where clauses to N-1 or 1-1 required relationships, only 1-N.
 More info: https://github.com/prisma/prisma/issues/15837#issuecomment-1290404982
 
 To fix this until issue is resolved: Change "${model}" db rules to not rely on where clauses, OR for N-1 relationships, invert the include so the "${model}" model is including the many table. (N-1 => 1-N)`,
       );
-      throw new Error('Unauthorized');
+      throw { message: 'Unauthorized', data: { model } };
       // don't accept wheres for create
     } else if (method !== 'create') {
       if (ruleWhereOrBool === true && !acceptsWheres) {
@@ -124,7 +124,11 @@ To fix this until issue is resolved: Change "${model}" db rules to not rely on w
   try {
     await applyRulesWheres(args, { model, method });
   } catch (err: any) {
-    return { status: 401, data: { error: 'Unauthorized' } };
+    if (err?.message === 'Unauthorized') {
+      return { status: 401, data: { error: `Unauthorized Bridg query on model: ${err?.data?.model}` } };
+    } else {
+      return { status: 400, data: { error: `Error executing Bridg query: ${err?.message}` } };
+    }
   }
 
   let data;
@@ -155,7 +159,7 @@ const funcOptions = [
   'updateMany',
   // 'upsert',
 ] as const;
-type PrismaFunction = (typeof funcOptions)[number];
+type PrismaFunction = typeof funcOptions[number];
 
 const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' | 'delete' } = {
   aggregate: 'find',
@@ -172,53 +176,54 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' |
   update: 'update',
   updateMany: 'update',
   // upsert: 'update',
-};
+}
 
-const MODEL_RELATION_MAP: { [key in ModelName]: { [key: string]: { model: ModelName; acceptsWheres: boolean } } } = {
-  user: {
-    blogs: {
-      acceptsWheres: true,
-      model: 'blog',
-    },
+  const MODEL_RELATION_MAP: { [key in ModelName]: { [key: string]: { model: ModelName; acceptsWheres: boolean } } } = {
+  "user": {
+    "blogs": {
+      "acceptsWheres": true,
+      "model": "blog"
+    }
   },
-  blog: {
-    user: {
-      acceptsWheres: true,
-      model: 'user',
+  "blog": {
+    "user": {
+      "acceptsWheres": true,
+      "model": "user"
     },
-    comments: {
-      acceptsWheres: true,
-      model: 'comment',
-    },
+    "comments": {
+      "acceptsWheres": true,
+      "model": "comment"
+    }
   },
-  comment: {
-    blog: {
-      acceptsWheres: true,
-      model: 'blog',
-    },
-  },
-};
+  "comment": {
+    "blog": {
+      "acceptsWheres": true,
+      "model": "blog"
+    }
+  }
+}
 
-type OptionalPromise<T> = T | Promise<T>;
+  type OptionalPromise<T> = T | Promise<T>;
 
-type RuleCallback<ReturnType, CreateInput = undefined> = CreateInput extends undefined
-  ? (uid?: string) => OptionalPromise<ReturnType>
-  : (uid?: string, body?: CreateInput) => OptionalPromise<ReturnType>;
+  type RuleCallback<ReturnType, CreateInput = undefined> = CreateInput extends undefined
+    ? (uid?: string) => OptionalPromise<ReturnType>
+    : (uid?: string, body?: CreateInput) => OptionalPromise<ReturnType>;
 
-type ModelRules<WhereInput, CreateInput> = Partial<{
-  find: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
-  update: boolean | WhereInput | RuleCallback<boolean | WhereInput, CreateInput>;
-  create: boolean | RuleCallback<boolean, CreateInput>;
-  delete: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
-  default: boolean | RuleCallback<boolean, CreateInput>;
-}>;
+  type ModelRules<WhereInput, CreateInput> = Partial<{
+    find: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
+    update: boolean | WhereInput | RuleCallback<boolean | WhereInput, CreateInput>;
+    create: boolean | RuleCallback<boolean, CreateInput>;
+    delete: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
+    default: boolean | RuleCallback<boolean, CreateInput>;
+  }>;
 
-export type DbRules = Partial<{
+  export type DbRules = Partial<{
   default: boolean;
   user: ModelRules<Prisma.UserWhereInput, Prisma.UserUncheckedCreateInput>;
   blog: ModelRules<Prisma.BlogWhereInput, Prisma.BlogUncheckedCreateInput>;
   comment: ModelRules<Prisma.CommentWhereInput, Prisma.CommentUncheckedCreateInput>;
-}>;
-
-const models = ['user', 'blog', 'comment'] as const;
-type ModelName = (typeof models)[number];
+  }>;
+  
+  const models = ['user', 'blog', 'comment'] as const;
+  type ModelName = typeof models[number];
+  
