@@ -269,9 +269,11 @@ In the above example, all `update` and `create` requests will fail. Since they w
 The properties available to create rules for are:
 
 - `find`: authorizes reading data (.findMany, .findFirst, .findFirstOrThrow, .findUnique, .findUniqueOrThrow, .aggregate, .count, .groupBy)
-- `update`: authorizes updates (.update, .updateMany)
-- `create`: authorizes creating data (.create, .createMany)
+- `update`: authorizes updates (.update, .updateMany, .upsert)
+- `create`: authorizes creating data (.create, .createMany, .upsert)
 - `delete`: authorizes deleting data (.delete, .deleteMany)
+
+Note: .upsert uses `update` rules, if no data is updated, it will use `create` rules for creation
 
 ### What is a validator?
 
