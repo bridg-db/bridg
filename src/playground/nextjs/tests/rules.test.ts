@@ -328,6 +328,48 @@ it('Create rules work when creating related models', async () => {
   // );
 });
 
+it('Upsert queries correctly use update, then create rules', async () => {
+  // FAIL
+  // first fails to update nonexistent record, falls back to create
+  setRules({ blog: { update: true, create: false } });
+  await queryFails(
+    bridg.blog.upsert({
+      where: { id: 'nonexistent' },
+      update: {},
+      create: { title: 'hello' },
+    }),
+  );
+  // fails immediately when trying to update
+  setRules({ blog: { update: false, create: true } });
+  await queryFails(
+    bridg.blog.upsert({
+      where: { id: testBlog1.id },
+      update: {},
+      create: { title: 'hello' },
+    }),
+  );
+  // SUCCESS
+  setRules({ blog: { update: { id: 'nonexistent!!' }, create: true } });
+  const newBlog = await querySucceeds(
+    bridg.blog.upsert({
+      where: { id: 'nonexistent' },
+      update: {},
+      create: { title: 'hello' },
+    }),
+  );
+  expect(newBlog.title).toBe('hello');
+  setRules({ blog: { update: true, create: false } });
+  const editedBlog = await querySucceeds(
+    bridg.blog.upsert({
+      where: { id: testBlog1.id },
+      update: { body: 'edited-body' },
+      create: { title: 'hello' },
+    }),
+  );
+  expect(editedBlog.body).toBe('edited-body');
+  expect(editedBlog.id).toBe(testBlog1.id);
+});
+
 it('Update.relation.update rules working', async () => {
   const query = () =>
     bridg.blog.update({

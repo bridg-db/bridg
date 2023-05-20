@@ -78,11 +78,11 @@ const userClient = {
   ): PrismaPromise<Prisma.BatchPayload> =>
     // @ts-ignore
     exec({ func: 'updateMany', model: 'user', args }),
-  // upsert: <T extends Prisma.UserUpsertArgs>(
-  //     args: Prisma.SelectSubset<T, Prisma.UserUpsertArgs>,
-  // ): Prisma.Prisma__UserClient<Prisma.UserGetPayload<T>> =>
-  //     // @ts-ignore
-  //     exec({ func: 'upsert', model: 'user', args }),
+  upsert: <T extends Prisma.UserUpsertArgs>(
+    args: Prisma.SelectSubset<T, Prisma.UserUpsertArgs>,
+  ): Prisma.Prisma__UserClient<Prisma.UserGetPayload<T>> =>
+    // @ts-ignore
+    exec({ func: 'upsert', model: 'user', args }),
 };
 
 const blogClient = {
@@ -145,11 +145,11 @@ const blogClient = {
   ): PrismaPromise<Prisma.BatchPayload> =>
     // @ts-ignore
     exec({ func: 'updateMany', model: 'blog', args }),
-  // upsert: <T extends Prisma.BlogUpsertArgs>(
-  //     args: Prisma.SelectSubset<T, Prisma.BlogUpsertArgs>,
-  // ): Prisma.Prisma__BlogClient<Prisma.BlogGetPayload<T>> =>
-  //     // @ts-ignore
-  //     exec({ func: 'upsert', model: 'blog', args }),
+  upsert: <T extends Prisma.BlogUpsertArgs>(
+    args: Prisma.SelectSubset<T, Prisma.BlogUpsertArgs>,
+  ): Prisma.Prisma__BlogClient<Prisma.BlogGetPayload<T>> =>
+    // @ts-ignore
+    exec({ func: 'upsert', model: 'blog', args }),
 };
 
 const commentClient = {
@@ -213,11 +213,11 @@ const commentClient = {
   ): PrismaPromise<Prisma.BatchPayload> =>
     // @ts-ignore
     exec({ func: 'updateMany', model: 'comment', args }),
-  // upsert: <T extends Prisma.CommentUpsertArgs>(
-  //     args: Prisma.SelectSubset<T, Prisma.CommentUpsertArgs>,
-  // ): Prisma.Prisma__CommentClient<Prisma.CommentGetPayload<T>> =>
-  //     // @ts-ignore
-  //     exec({ func: 'upsert', model: 'comment', args }),
+  upsert: <T extends Prisma.CommentUpsertArgs>(
+    args: Prisma.SelectSubset<T, Prisma.CommentUpsertArgs>,
+  ): Prisma.Prisma__CommentClient<Prisma.CommentGetPayload<T>> =>
+    // @ts-ignore
+    exec({ func: 'upsert', model: 'comment', args }),
 };
 
 export default {
