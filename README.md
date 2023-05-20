@@ -98,7 +98,7 @@ Bridg is built on top of Prisma, you can check out the basics of executing CRUD 
 
 The [Prisma documentation](https://www.prisma.io/docs/getting-started) is excellent and is highly recommended if you haven't used Prisma in the past.
 
-For security reasons, some functionality ([like upserts](https://github.com/JoeRoddy/bridg/issues/1)) aren't available, but I'm working towards full compatibility with Prisma.
+For security reasons, some functionality isn't available, but I'm working towards full compatibility with Prisma. Currently `upsert`, `connectOrCreate`, `set`, and `discconnect` are unavailable inside of nested queries.
 
 Executing queries works like so:
 
