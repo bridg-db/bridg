@@ -64,6 +64,7 @@ generator client {
 
 4. Generate the client: `npm run generate`
    - This will need to be ran any time you change your DB schema
+   - There is a known issue with the `generate` command on the default Windows command prompt. Please opt to use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) until I get it fixed.
 5. Expose an API endpoint at `/api/bridg` to handle requests:
 
 ```ts
