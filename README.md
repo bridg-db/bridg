@@ -43,6 +43,7 @@ _Want an example project for your favorite framework? Feel free to [create an is
 
 1. [Configure your project to use Prisma ](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres)
    - Add the `extendedWhereUnique` preview feature to your `schema.prisma`
+   - Note: If you run into issues, try using `^prisma@4.10.1`, Prisma 5 support is currently in the works
 
 ```ts
 generator client {
@@ -64,6 +65,7 @@ generator client {
 
 4. Generate the client: `npm run generate`
    - This will need to be ran any time you change your DB schema
+   - There is a known issue with the `generate` command on the default Windows command prompt. Please opt to use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) until I get it fixed.
 5. Expose an API endpoint at `/api/bridg` to handle requests:
 
 ```ts
