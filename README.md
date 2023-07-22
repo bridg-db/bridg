@@ -43,6 +43,7 @@ _Want an example project for your favorite framework? Feel free to [create an is
 
 1. [Configure your project to use Prisma ](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres)
    - Add the `extendedWhereUnique` preview feature to your `schema.prisma`
+   - Note: If you run into issues, try using `^prisma@4.10.1`, Prisma 5 support is currently in the works
 
 ```ts
 generator client {
