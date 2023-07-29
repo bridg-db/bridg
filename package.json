@@ -1,6 +1,6 @@
 {
   "name": "bridg",
-  "version": "1.0.29",
+  "version": "1.0.30",
   "description": "Query your database from any JavaScript frontend",
   "main": "index.js",
   "types": "index.d.ts",
