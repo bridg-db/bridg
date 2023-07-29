@@ -29,7 +29,7 @@ export const handleRequest = async (
         data: args.update,
       };
       await applyRulesWheres(updateArgs, { model, method: 'update' }, { uid, rules });
-      // @ts-expect-error - catch err 'Record to update not found.'
+      // @ts-ignore - catch err 'Record to update not found.'
       const updateData = await db[model].update(updateArgs).catch(() => {});
       if (updateData) {
         return { status: 200, data: updateData };
@@ -52,7 +52,7 @@ export const handleRequest = async (
 
   let data;
   try {
-    // @ts-expect-error
+    // @ts-ignore
     data = await db[model][func](args);
   } catch (error) {
     console.error(error);
