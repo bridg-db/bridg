@@ -4,6 +4,8 @@
 
 Bridg let's you query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
 
+This library is still a work in progress, and there are still lots of warts. If you're able to try it out and run into issues, please don't hesitate to open an issue, or ask questions in the Discord.
+
 ```tsx
 <input
   placeholder="Search for blogs.."
@@ -15,7 +17,11 @@ Bridg let's you query your database from the client, like Firebase or Supabase, 
 />
 ```
 
-This library is still a work in progress, and there are still lots of warts. If you're able to try it out and run into issues, please don't hesitate to open an issue, or ask questions in the Discord.
+### Demo Video
+
+[![Watch the video](https://img.youtube.com/vi/lxe9PvnWAeY/default.jpg)](https://youtu.be/lxe9PvnWAeY)
+
+### Links
 
 [Getting Started](#getting-started)  
 [Querying Your Database](#querying-your-database)  
@@ -44,14 +50,15 @@ _Want an example project for your favorite framework? Feel free to [create an is
 ### Add Bridg to an existing project
 
 1. [Configure your project to use Prisma ](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres)
-  
- -  Make sure you install `prisma@4.10.1`, Prisma 5 support is currently in the works: 
-  ```shell
-      npm i -D prisma@4.10.1
-      npm i @prisma/client@4.10.1
-  ```
-   - Add the `extendedWhereUnique` preview feature to your `schema.prisma`
 
+- Make sure you install `prisma@4.10.1`, Prisma 5 support is currently in the works:
+
+```shell
+    npm i -D prisma@4.10.1
+    npm i @prisma/client@4.10.1
+```
+
+- Add the `extendedWhereUnique` preview feature to your `schema.prisma`
 
 ```ts
 generator client {
