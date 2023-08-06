@@ -15,6 +15,8 @@ Bridg let's you query your database from the client, like Firebase or Supabase, 
 />
 ```
 
+This library is still a work in progress, and there are still lots of warts. If you're able to try it out and run into issues, please don't hesitate to open an issue, or ask questions in the Discord.
+
 [Getting Started](#getting-started)  
 [Querying Your Database](#querying-your-database)  
 [Protecting Your Data](#database-rules)
@@ -33,7 +35,7 @@ MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQ
 
 [create-react-app (serverless)](https://github.com/JoeRoddy/bridg-example-cra) - CRA + Postgres + Netlify function (for Bridg)
 
-[React Native](https://github.com/JoeRoddy/bridg-example-expo) - Expo App + Postgres + Netlify
+[React Native](https://github.com/JoeRoddy/bridg-expo-2) - Expo App + Postgres + Netlify
 
 [Vue.js](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database
 
