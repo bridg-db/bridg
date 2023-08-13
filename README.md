@@ -124,7 +124,7 @@ generator bridg {
   // customize Bridg client output location
   output = "/custom/client/path" // (defaults to node_modules/bridg)
   // customize api endpoint Bridg will send queries to
-  api = "/custom/handler/endpoint" // (defaults to /api/bridg)
+  api = "https://example.com/api/bridg" // (defaults to /api/bridg)
 }
 ```
 
