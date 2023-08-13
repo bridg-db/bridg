@@ -1,0 +1,12 @@
+{
+  "devDependencies": {
+    "@commitlint/cli": "16.2.3",
+    "@commitlint/config-conventional": "16.0.0",
+    "husky": "7.0.4"
+  },
+  "scripts": {
+    "prepare": "husky install",
+    "generate": "cd packages/generator && npm run prepack && cd ../usage && npx prisma generate"
+  },
+  "version": "0.0.2"
+}
