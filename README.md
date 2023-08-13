@@ -72,8 +72,6 @@ generator client {
 // Add this UNDER your prisma client
 generator bridg {
   provider = "bridg"
-  // output = "/custom/client/path" (defaults to node_modules/bridg)
-  // api = "/custom/handler/endpoint" (defaults to /api/bridg)
 }
 ```
 
