@@ -1,9 +1,11 @@
-node_modules/
-dist/
-tmp/
-app/
-package-lock.json
-.next
+dist
+node_modules
+yarn-error.log
+build
+pnpm-debug.log
+.env*
 
-# npm tarball
-*.tgz 
+# some random testing crap
+/packages/usage/output
+/packages/usage/custom-output
+/packages/usage/__tests__/generated

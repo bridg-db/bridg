@@ -11,7 +11,9 @@ This library is still a work in progress, and there are still lots of warts. If 
   placeholder="Search for blogs.."
   onChange={async (e) => {
     const query = e.target.value;
-    const blogs = await db.blog.findMany({ where: { title: { contains: query } } });
+    const blogs = await db.blog.findMany({
+      where: { title: { contains: query } },
+    });
     setSearchResults(blogs);
   }}
 />
@@ -49,39 +51,35 @@ _Want an example project for your favorite framework? Feel free to [create an is
 
 ### Add Bridg to an existing project
 
-1. [Configure your project to use Prisma ](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres)
-
-- Make sure you install `prisma@4.10.1`, Prisma 5 support is currently in the works:
+1. [Configure your project to use Prisma ](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres) (Bridg currently requires prisma `5.0.0` or later.)
 
 ```shell
-    npm i -D prisma@4.10.1
-    npm i @prisma/client@4.10.1
-```
-
-- Add the `extendedWhereUnique` preview feature to your `schema.prisma`
-
-```ts
-generator client {
-  provider        = "your-client"
-  previewFeatures = ["extendedWhereUnique"]
-}
+    npm i -D prisma
+    npm i @prisma/client
+    npx prisma init --datasource-provider sqlite
+    # opts: postgresql, mysql, sqlite, sqlserver, mongodb, cockroachdb
 ```
 
 2. Install Bridg: `npm install bridg`
-3. Add the following script to your `package.json` :
 
-```json
-{
-  "scripts": {
-    "generate": "npx prisma generate && npm explore bridg -- npm run generate"
-  }
+3. Add the Bridg generator to your `schema.prisma` :
+
+```ts
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Add this UNDER your prisma client
+generator bridg {
+  provider = "bridg"
+  // output = "/custom/client/path" (defaults to node_modules/bridg)
+  // api = "/custom/handler/endpoint" (defaults to /api/bridg)
 }
 ```
 
-4. Generate the client: `npm run generate`
-   - This will need to be ran any time you change your DB schema
-   - There is a known issue with the `generate` command on the default Windows command prompt. Please opt to use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) until I get it fixed.
-5. Expose an API endpoint at `/api/bridg` to handle requests:
+4. Generate your clients: `npx prisma generate`
+
+5. Expose an API endpoint at `/api/bridg` or configure a [custom endpoint](#Generator-Options) to handle requests:
 
 ```ts
 // Example Next.js API handler, translate to your JS API framework of choice
@@ -99,9 +97,36 @@ export default async function handler(req, res) {
 
   // pass the request (req.body), your prisma client (db),
   // the user making the request (uid), and your database rules (rules)
-  const { data, status } = await handleRequest(req.body, { db, uid: userId, rules });
+  const { data, status } = await handleRequest(req.body, {
+    db,
+    uid: userId,
+    rules,
+  });
 
   return res.status(status).json(data);
+}
+```
+
+You should be good to go! Try using the Bridg client on your frontend:
+
+```tsx
+// some frontend file
+import bridg from 'bridg';
+
+const CreateBlogButton = ({ blog }) => (
+  <button onClick={() => bridg.blog.create({ data: blog })}>Create Blog</button>
+);
+```
+
+### Generator Options
+
+```ts
+generator bridg {
+  provider = "bridg"
+  // customize Bridg client output location
+  output = "/custom/client/path" // (defaults to node_modules/bridg)
+  // customize api endpoint Bridg will send queries to
+  api = "/custom/handler/endpoint" // (defaults to /api/bridg)
 }
 ```
 

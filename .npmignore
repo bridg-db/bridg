@@ -1,5 +1,0 @@
-# needed so that our .gitignore'd js files are included with our library
-src/
-tmp/
-*.tgz
-playground
