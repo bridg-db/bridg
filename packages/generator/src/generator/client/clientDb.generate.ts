@@ -8,7 +8,7 @@ const generateExports = (models: string[]) => {
     ``
   );
 
-  return `\nconst bridg = {${exports}\n};\nexport default bridg;//kekw`;
+  return `\nconst bridg = {${exports}\n};\nexport default bridg;`;
 };
 
 const getHead = (apiLocation = '/api/bridg') => `
