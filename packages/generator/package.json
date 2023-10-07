@@ -19,7 +19,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@prisma/generator-helper": "5.1.0",
+    "@prisma/generator-helper": "5.4.1",
     "@types/strip-comments": "^2.0.1",
     "prettier": "2.5.1",
     "strip-comments": "^2.0.1"
