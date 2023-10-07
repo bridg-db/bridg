@@ -82,4 +82,4 @@ var bridg = {
     blog: blogClient,
     comment: commentClient,
 };
-exports.default = bridg; //kekw
+exports.default = bridg;
