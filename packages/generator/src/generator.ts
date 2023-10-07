@@ -4,7 +4,10 @@ import path from 'path';
 import * as ts from 'typescript';
 import { compileTsDir } from './compileTsDir';
 import { GENERATOR_NAME, VERSION } from './constants';
-import { generateBridgTsFiles } from './generator/ts-generation';
+import {
+  generateBridgTsFiles,
+  generateRulesFile,
+} from './generator/ts-generation';
 import {
   deleteDirSafely,
   deleteFileSafely,
@@ -34,6 +37,7 @@ generatorHandler({
     cleanupPreviouslyGeneratedFiles(outRoot);
     generateBridgTsFiles(schemaPath, tempDir, api);
     compileBridgFiles(tempDir, tsOutDir, debug);
+    generateRulesFile(options, outRoot);
 
     // move files to desired output location, cleanup temp dir
     await moveDirContentsToDirectory(path.join(tsOutDir, 'client'), outRoot);
