@@ -37,73 +37,62 @@ MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQ
 
 ### Example Projects
 
-[Next.js (basic)](https://github.com/JoeRoddy/bridg-example-nextjs) Simple Next.js example with SQLite database ([Codesandbox](https://codesandbox.io/p/sandbox/inspiring-lake-e7w5cg?file=%2Fsrc%2Fpages%2Findex.tsx))
-
-[Next.js (blogging app)](https://github.com/JoeRoddy/bridg-example-nextjs-auth-blogs) - Next.js, next-auth authentication, CRUD examples, SQLite
-
-[create-react-app (serverless)](https://github.com/JoeRoddy/bridg-example-cra) - CRA + Postgres + Netlify function (for Bridg)
-
-[React Native](https://github.com/JoeRoddy/bridg-expo-2) - Expo App + Postgres + Netlify
-
-[Vue.js](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database
+- [Next.js (basic)](https://github.com/JoeRoddy/bridg-example-nextjs) Simple Next.js example with SQLite database ([Codesandbox](https://codesandbox.io/p/sandbox/inspiring-lake-e7w5cg?file=%2Fsrc%2Fpages%2Findex.tsx))
+- [Next.js (blogging app)](https://github.com/JoeRoddy/bridg-example-nextjs-auth-blogs) - Next.js, next-auth authentication, CRUD examples, SQLite
+- [create-react-app (serverless)](https://github.com/JoeRoddy/bridg-example-cra) - CRA + Postgres + Netlify function (for Bridg)
+- [React Native](https://github.com/JoeRoddy/bridg-expo-2) - Expo App + Postgres + Netlify
+- [Vue.js](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database
 
 _Want an example project for your favorite framework? Feel free to [create an issue](https://github.com/JoeRoddy/bridg/issues/new), or a PR with a sample._
 
 ### Add Bridg to an existing project
 
 1. [Configure your project to use Prisma ](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres) (Bridg currently requires prisma `5.0.0` or later.)
-
-```shell
+    ```shell
     npm i -D prisma
     npm i @prisma/client
     npx prisma init --datasource-provider sqlite
     # opts: postgresql, mysql, sqlite, sqlserver, mongodb, cockroachdb
-```
-
+    ```
 2. Install Bridg: `npm install bridg`
-
 3. Add the Bridg generator to your `schema.prisma` :
-
-```ts
-generator client {
-  provider = "prisma-client-js"
-}
-
-// Add this UNDER your prisma client
-generator bridg {
-  provider = "bridg"
-}
-```
-
+    ```ts
+    generator client {
+      provider = "prisma-client-js"
+    }
+    
+    // Add this UNDER your prisma client
+    generator bridg {
+      provider = "bridg"
+    }
+    ```
 4. Generate your clients: `npx prisma generate`
-
 5. Expose an API endpoint at `/api/bridg` or configure a [custom endpoint](#Generator-Options) to handle requests:
-
-```ts
-// Example Next.js API handler, translate to your JS API framework of choice
-import { handleRequest } from 'bridg/server/request-handler';
-import { PrismaClient } from '@prisma/client';
-
-const db = new PrismaClient();
-
-// allows all requests, don't ship like this, ya dingus
-const rules = { default: true };
-
-export default async function handler(req, res) {
-  // Mock authentication, replace with any auth system you want
-  const userId = 'authenticated-user-id';
-
-  // pass the request (req.body), your prisma client (db),
-  // the user making the request (uid), and your database rules (rules)
-  const { data, status } = await handleRequest(req.body, {
-    db,
-    uid: userId,
-    rules,
-  });
-
-  return res.status(status).json(data);
-}
-```
+    ```ts
+    // Example Next.js API handler, translate to your JS API framework of choice
+    import { handleRequest } from 'bridg/server/request-handler';
+    import { PrismaClient } from '@prisma/client';
+    
+    const db = new PrismaClient();
+    
+    // allows all requests, don't ship like this, ya dingus
+    const rules = { default: true };
+    
+    export default async function handler(req, res) {
+      // Mock authentication, replace with any auth system you want
+      const userId = 'authenticated-user-id';
+    
+      // pass the request (req.body), your prisma client (db),
+      // the user making the request (uid), and your database rules (rules)
+      const { data, status } = await handleRequest(req.body, {
+        db,
+        uid: userId,
+        rules,
+      });
+    
+      return res.status(status).json(data);
+    }
+    ```
 
 You should be good to go! Try using the Bridg client on your frontend:
 
@@ -122,9 +111,9 @@ const CreateBlogButton = ({ blog }) => (
 generator bridg {
   provider = "bridg"
   // customize Bridg client output location
-  output = "/custom/client/path" // (defaults to node_modules/bridg)
+  output   = "/custom/client/path" // (defaults to node_modules/bridg)
   // customize api endpoint Bridg will send queries to
-  api = "https://example.com/api/bridg" // (defaults to /api/bridg)
+  api      = "https://example.com/api/bridg" // (defaults to /api/bridg)
 }
 ```
 
@@ -138,7 +127,7 @@ Bridg is built on top of Prisma, you can check out the basics of executing CRUD 
 
 The [Prisma documentation](https://www.prisma.io/docs/getting-started) is excellent and is highly recommended if you haven't used Prisma in the past.
 
-For security reasons, some functionality isn't available, but I'm working towards full compatibility with Prisma. Currently `upsert`, `connectOrCreate`, `set`, and `discconnect` are unavailable inside of nested queries.
+For security reasons, some functionality isn't available, but I'm working towards full compatibility with Prisma. Currently `upsert`, `connectOrCreate`, `set`, and `disconnect` are unavailable inside of nested queries.
 
 Executing queries works like so:
 
