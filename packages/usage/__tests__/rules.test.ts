@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, expect, it } from '@jest/globals';
-import { Blog, Prisma, User } from '@prisma/client';
 import { mockFetch } from './__mocks__/fetch.mock';
 import bridg from './generated/bridg';
+import { Blog, Prisma, User } from './generated/prisma';
 import prisma, { resetDbData } from './utils/prisma';
 import { setRules } from './utils/test-rules';
 
