@@ -749,7 +749,6 @@ it('Update.relation.upsert throws error (not supported)', async () => {
 });
 
 it('Supports model.rule property as an alternative for setting rules', async () => {
-  // TODO: test callbacks, where objects
   // FAIL
   setRules({
     blog: {

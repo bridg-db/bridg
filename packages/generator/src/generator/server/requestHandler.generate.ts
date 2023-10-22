@@ -217,13 +217,9 @@ const generateHandlerFile = ({
 }) => {
   const types = generateServerTypes(modelNames, schemaStr);
   const handlerPath = path.join(outputLocation, 'server', 'request-handler.ts');
-  console.log('[handler, prismaLocation]', [handlerPath, prismaLocation]);
-
   const prismaImportPath = prismaLocation
     ? getRelativeImportPath(path.dirname(handlerPath), prismaLocation)
     : `@prisma/client`;
-  console.log('prismaImportPath', prismaImportPath);
-
   const fileContent = `import { Prisma, PrismaClient } from '${prismaImportPath}';${HANDLER_TEMPLATE}\n${types}`;
 
   writeFileSafely(handlerPath, fileContent);
