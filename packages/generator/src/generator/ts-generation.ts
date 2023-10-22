@@ -17,17 +17,32 @@ export const parseModelNamesFromSchema = (prismaSchema: string) =>
   prismaSchema.match(MODEL_REGEX)?.map((m) => m.trim()) || [];
 
 export const generateBridgTsFiles = (
-  pathToSchema: string,
-  outputLocation: string,
-  apiLoctation: string
+  options: GeneratorOptions,
+  outputLocation: string
 ) =>
-  generateFiles(readFileAsString(pathToSchema), outputLocation, apiLoctation);
+  generateFiles({
+    schemaStr: readFileAsString(options.schemaPath),
+    modelNames: options.dmmf.datamodel.models.map((m) => m.name),
+    outputLocation,
+    apiLocation: (options.generator.config.api as string) || '/api/bridg',
+    prismaLocation:
+      options.otherGenerators.find((g) => g.name === 'client')?.output?.value ||
+      undefined,
+  });
 
-export const generateFiles = (
-  schemaStr: string,
-  outputLocation: string,
-  apiLocation: string
-) => {
+export const generateFiles = ({
+  schemaStr,
+  modelNames,
+  outputLocation,
+  apiLocation,
+  prismaLocation,
+}: {
+  schemaStr: string;
+  modelNames: string[];
+  outputLocation: string;
+  apiLocation: string;
+  prismaLocation?: string;
+}) => {
   if (!schemaStr) throw new Error(`Schema not provided`);
   //   if (!schemaStr.match(/.+["']extendedWhereUnique["'].+/g)) {
   //     console.error(`ERROR: Ensure you've added 'extendedWhereUnique' to your schema.prisma:
@@ -39,9 +54,14 @@ export const generateFiles = (
   //   }
 
   schemaStr = strip(schemaStr);
-  const models = parseModelNamesFromSchema(schemaStr);
-  generateClientDbFile(models, outputLocation, apiLocation);
-  generateHandler(models, schemaStr, outputLocation);
+
+  generateClientDbFile(modelNames, outputLocation, apiLocation);
+  generateHandler({
+    modelNames,
+    schemaStr,
+    outputLocation,
+    prismaLocation,
+  });
 };
 
 export const generateRulesFile = (
@@ -49,8 +69,8 @@ export const generateRulesFile = (
   outputRoot: string
 ) => {
   const rulesLocation = path.join(options.schemaPath, '..', 'rules.ts');
-  const models = options.dmmf.datamodel.models.map((m) => m.name);
-  if (!models.length || existsSync(rulesLocation)) return;
+  const modelNames = options.dmmf.datamodel.models.map((m) => m.name);
+  if (!modelNames.length || existsSync(rulesLocation)) return;
   const importPath = getRelativeImportPath(
     rulesLocation,
     `${outputRoot}/server/request-handler`
@@ -61,7 +81,7 @@ export const generateRulesFile = (
 export const rules: DbRules = {
   // global default, allow/block non-specified queries, set to true only in development
   default: false, 
-  // tableName: false | true,       - block/allow all queries on a table${models
+  // tableName: false | true,       - block/allow all queries on a table${modelNames
     .map(
       (m, i) =>
         `\n\t${uncapitalize(m)}: {

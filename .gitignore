@@ -9,3 +9,5 @@ pnpm-debug.log
 /packages/usage/output
 /packages/usage/custom-output
 /packages/usage/__tests__/generated
+/packages/usage/prisma/prisma
+/packages/usage/prisma/bridg
