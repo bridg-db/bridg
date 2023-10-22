@@ -26,22 +26,22 @@ generatorHandler({
     };
   },
   onGenerate: async (options: GeneratorOptions) => {
-    const api = (options.generator.config.api as string) || '/api/bridg';
     const debug = options.generator.config.debug === 'true';
     const outRoot = options.generator.output?.value || './node_modules/bridg';
-
-    const schemaPath = options.schemaPath;
     const tempDir = path.join(outRoot, 'tmp');
-    const tsOutDir = path.join(tempDir, 'output');
+    const tsOutTempDir = path.join(tempDir, 'output');
 
     cleanupPreviouslyGeneratedFiles(outRoot);
-    generateBridgTsFiles(schemaPath, tempDir, api);
-    compileBridgFiles(tempDir, tsOutDir, debug);
+    generateBridgTsFiles(options, tempDir);
+    compileBridgFiles(tempDir, tsOutTempDir, debug);
     generateRulesFile(options, outRoot);
 
     // move files to desired output location, cleanup temp dir
-    await moveDirContentsToDirectory(path.join(tsOutDir, 'client'), outRoot);
-    renameSync(path.join(tsOutDir, 'server'), path.join(outRoot, 'server'));
+    await moveDirContentsToDirectory(
+      path.join(tsOutTempDir, 'client'),
+      outRoot
+    );
+    renameSync(path.join(tsOutTempDir, 'server'), path.join(outRoot, 'server'));
     rmSync(tempDir, { recursive: true, force: true });
 
     return;

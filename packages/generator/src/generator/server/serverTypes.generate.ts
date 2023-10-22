@@ -1,20 +1,20 @@
 import strip from 'strip-comments';
-import { capitalize, uncapitalize } from '../../utils/string.util';
+import { uncapitalize } from '../../utils/string.util';
 import { MODEL_REGEX } from '../ts-generation';
 
 type RelationsForModel = Record<
   string,
   { acceptsWheres: boolean; model: string }
 >;
-type SchemaRelations = Record<string, RelationsForModel>;
 
+// TODO: migrate to DMMF, instead of parsing schema ourself
 export const generateSchemaRelations = (
   models: string[],
   schemaStr: string
 ) => {
   const commentsStripped = strip(schemaStr);
   const modelChunks = commentsStripped.match(/model\s?\w+\s?{.+?}/gs);
-  const schemaRelations: SchemaRelations = {};
+  const schemaRelations: Record<string, RelationsForModel> = {};
 
   modelChunks?.forEach((modelChunk) => {
     const modelLines = modelChunk.split('\n');
@@ -51,12 +51,6 @@ export const generateSchemaRelations = (
 
 export const generateServerTypes = (models: string[], schemaStr: string) => {
   models = models || [];
-  const innerRules = models.reduce((acc, m) => {
-    const Model = capitalize(m);
-    return `${acc}\n  ${uncapitalize(
-      m
-    )}: ModelRules<Prisma.${Model}WhereInput, Prisma.${Model}UncheckedCreateInput>;`;
-  }, `\n  default: boolean;`);
   const modelRelations = generateSchemaRelations(models, schemaStr);
 
   return `
@@ -66,21 +60,34 @@ export const generateServerTypes = (models: string[], schemaStr: string) => {
     2
   )}
 
-  type OptionalPromise<T> = T | Promise<T>;
-
-  type RuleCallback<ReturnType, CreateInput = undefined> = CreateInput extends undefined
+  declare type OptionalPromise<T> = T | Promise<T>;
+  declare type RuleCallback<
+    ReturnType,
+    CreateInput = undefined
+  > = CreateInput extends undefined
     ? (uid?: string) => OptionalPromise<ReturnType>
     : (uid?: string, body?: CreateInput) => OptionalPromise<ReturnType>;
-
-  type ModelRules<WhereInput, CreateInput> = Partial<{
-    find: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
-    update: boolean | WhereInput | RuleCallback<boolean | WhereInput, CreateInput>;
-    create: boolean | RuleCallback<boolean, CreateInput>;
-    delete: boolean | WhereInput | RuleCallback<boolean | WhereInput>;
-    default: boolean | RuleCallback<boolean, CreateInput>;
+  declare type RuleOrCallback<RuleOptions, CreateInput> =
+    | RuleOptions
+    | RuleCallback<RuleOptions, CreateInput>;
+  declare type BridgRule<RuleOptions, CreateInput = undefined> =
+    | RuleOrCallback<RuleOptions, CreateInput>
+    | { rule: RuleOrCallback<RuleOptions, CreateInput> };
+  declare type ModelRules<WhereInput, CreateInput> = Partial<{
+    find: BridgRule<boolean | WhereInput>;
+    update: BridgRule<boolean | WhereInput, CreateInput>;
+    create: BridgRule<boolean, CreateInput>;
+    delete: BridgRule<boolean | WhereInput>;
+    default: BridgRule<boolean, CreateInput>;
   }>;
 
-  export type DbRules = Partial<{${innerRules}
+  export type DbRules = Partial<{${models.reduce(
+    (acc, Model) =>
+      `${acc}\n  ${uncapitalize(
+        Model
+      )}: ModelRules<Prisma.${Model}WhereInput, Prisma.${Model}UncheckedCreateInput>;`,
+    `\n  default: boolean;`
+  )}
   }>;
   
   const models = [${models.reduce(

@@ -1,8 +1,8 @@
-import { writeFileSafely } from '../../utils/file.util';
+import path from 'path';
+import { getRelativeImportPath, writeFileSafely } from '../../utils/file.util';
 import { generateServerTypes } from './serverTypes.generate';
 
 const HANDLER_TEMPLATE = `
-import { Prisma, PrismaClient } from '@prisma/client';
 
 export const handleRequest = async (
   requestBody: {
@@ -72,7 +72,8 @@ const applyRulesWheres = async (
   const modelMethodValidator = rules[model]?.[method];
   const modelDefaultValidator = rules[model]?.default;
   // can't use "a || b || c", bc it would inadvertently skip "method:false" rules
-  const queryValidator = modelMethodValidator ?? modelDefaultValidator ?? !!rules.default;
+  let queryValidator = modelMethodValidator ?? modelDefaultValidator ?? !!rules.default;
+  queryValidator = queryValidator?.rule ?? queryValidator;
   const ruleWhereOrBool = typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
   if (ruleWhereOrBool === false) throw { message: 'Unauthorized', data: { model } };
   if (typeof ruleWhereOrBool === 'object' && !acceptsWheres) {
@@ -203,15 +204,29 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' |
 
 // Currently this is just a static file with no templating,
 // just generating it now bc its likely we'll need to template it eventually
-const generateHandlerFile = (
-  models: string[],
-  schemaStr: string,
-  outputLocation: string,
-) => {
-  const types = generateServerTypes(models, schemaStr);
-  const fileContent = `${HANDLER_TEMPLATE}\n${types}`;
+const generateHandlerFile = ({
+  modelNames,
+  schemaStr,
+  outputLocation,
+  prismaLocation = `@prisma/client`,
+}: {
+  modelNames: string[];
+  schemaStr: string;
+  outputLocation: string;
+  prismaLocation?: string;
+}) => {
+  const types = generateServerTypes(modelNames, schemaStr);
+  const handlerPath = path.join(outputLocation, 'server', 'request-handler.ts');
+  console.log('[handler, prismaLocation]', [handlerPath, prismaLocation]);
 
-  writeFileSafely(`${outputLocation}/server/request-handler.ts`, fileContent);
+  const prismaImportPath = prismaLocation
+    ? getRelativeImportPath(path.dirname(handlerPath), prismaLocation)
+    : `@prisma/client`;
+  console.log('prismaImportPath', prismaImportPath);
+
+  const fileContent = `import { Prisma, PrismaClient } from '${prismaImportPath}';${HANDLER_TEMPLATE}\n${types}`;
+
+  writeFileSafely(handlerPath, fileContent);
 };
 
 export default generateHandlerFile;

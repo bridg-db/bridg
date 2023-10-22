@@ -747,3 +747,44 @@ it('Update.relation.upsert throws error (not supported)', async () => {
   setRules({ default: true });
   await queryFails(query());
 });
+
+it('Supports model.rule property as an alternative for setting rules', async () => {
+  // TODO: test callbacks, where objects
+  // FAIL
+  setRules({
+    blog: {
+      create: { rule: false },
+      find: { rule: { id: 'nonexistent' } },
+      update: { rule: () => false },
+    },
+  });
+  await queryFails(bridg.blog.create({ data: { title: TEST_TITLE } }));
+  await querySucceeds(bridg.blog.findMany(), 0);
+  await queryFails(
+    bridg.blog.update({
+      where: { id: testBlog1.id },
+      data: { title: 'updated' },
+    })
+  );
+
+  // SUCCESS
+  setRules({
+    blog: {
+      create: { rule: true },
+      find: { rule: { id: testBlog1.id } },
+      update: { rule: () => ({ id: testBlog1.id }) },
+    },
+  });
+  const b1 = await querySucceeds(
+    bridg.blog.create({ data: { title: TEST_TITLE } })
+  );
+  expect(b1?.title).toBe(TEST_TITLE);
+  await querySucceeds(bridg.blog.create({ data: { title: TEST_TITLE } }));
+  await querySucceeds(bridg.blog.findMany(), 1);
+  await querySucceeds(
+    bridg.blog.update({
+      where: { id: testBlog1.id },
+      data: { title: 'updated' },
+    })
+  );
+});

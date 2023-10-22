@@ -119,9 +119,9 @@ export const getRelativePathWithLeadingDot = (
 
 export const getRelativeImportPath = (
   sourceFile: string,
-  targetFile: string
+  importedFile: string
 ) => {
-  const location = getRelativePathWithLeadingDot(sourceFile, targetFile);
+  const location = getRelativePathWithLeadingDot(sourceFile, importedFile);
   const [beforeNM, afterNM] = location.split('node_modules/');
   // ./x/y/node_modules/z => z || ./x/y/z => ./x/y/z
   return afterNM || beforeNM;
