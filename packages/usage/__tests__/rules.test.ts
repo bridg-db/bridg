@@ -66,13 +66,9 @@ it('Find rules work with true/false', async () => {
 
   await queryFails(bridg.blog.findMany({ where: { title: TEST_TITLE } }));
   await queryFails(bridg.blog.findFirst({ where: { title: TEST_TITLE } }));
-  await queryFails(
-    bridg.blog.findFirstOrThrow({ where: { title: TEST_TITLE } })
-  );
+  await queryFails(bridg.blog.findFirstOrThrow({ where: { title: TEST_TITLE } }));
   await queryFails(bridg.blog.findUnique({ where: { id: testBlog1.id } }));
-  await queryFails(
-    bridg.blog.findUniqueOrThrow({ where: { id: testBlog1.id } })
-  );
+  await queryFails(bridg.blog.findUniqueOrThrow({ where: { id: testBlog1.id } }));
   await queryFails(bridg.blog.aggregate({ where: { id: testBlog1.id } }));
   await queryFails(bridg.blog.count());
   await queryFails(bridg.blog.groupBy({}));
@@ -81,13 +77,9 @@ it('Find rules work with true/false', async () => {
   setRules({ blog: { find: true } });
   await querySucceeds(bridg.blog.findMany(), 2);
   await querySucceeds(bridg.blog.findFirst({ where: { title: TEST_TITLE } }));
-  await querySucceeds(
-    bridg.blog.findFirstOrThrow({ where: { title: TEST_TITLE } })
-  );
+  await querySucceeds(bridg.blog.findFirstOrThrow({ where: { title: TEST_TITLE } }));
   await querySucceeds(bridg.blog.findUnique({ where: { id: testBlog1.id } }));
-  await querySucceeds(
-    bridg.blog.findUniqueOrThrow({ where: { id: testBlog1.id } })
-  );
+  await querySucceeds(bridg.blog.findUniqueOrThrow({ where: { id: testBlog1.id } }));
   await querySucceeds(bridg.blog.count());
   // TODO: await querySucceeds(bridg.blog.groupBy());
   // await querySucceeds(bridg.blog.aggregate({ where: { id: testBlog1.id } }));
@@ -97,42 +89,22 @@ it('Find rules work with where clauses', async () => {
   // FAIL
   setRules({ blog: { find: { title: 'SOMETHING_THAT_ISNT_IN_THE_DB' } } });
   await querySucceeds(bridg.blog.findMany({ where: { title: TEST_TITLE } }), 0);
-  await querySucceeds(
-    bridg.blog.findFirst({ where: { title: TEST_TITLE } }),
-    0
-  );
-  await querySucceeds(
-    bridg.blog.findFirst({ where: { title: TEST_TITLE } }),
-    0
-  );
-  await querySucceeds(
-    bridg.blog.findUnique({ where: { id: testBlog1.id } }),
-    0
-  );
+  await querySucceeds(bridg.blog.findFirst({ where: { title: TEST_TITLE } }), 0);
+  await querySucceeds(bridg.blog.findFirst({ where: { title: TEST_TITLE } }), 0);
+  await querySucceeds(bridg.blog.findUnique({ where: { id: testBlog1.id } }), 0);
   // throws error (fails), bc of method
-  await queryFails(
-    bridg.blog.findFirstOrThrow({ where: { title: TEST_TITLE } })
-  );
-  await queryFails(
-    bridg.blog.findUniqueOrThrow({ where: { id: testBlog1.id } })
-  );
+  await queryFails(bridg.blog.findFirstOrThrow({ where: { title: TEST_TITLE } }));
+  await queryFails(bridg.blog.findUniqueOrThrow({ where: { id: testBlog1.id } }));
 
   // SUCCESS
   setRules({ blog: { find: { title: TEST_TITLE } } });
   await querySucceeds(bridg.blog.findMany(), 1);
-  await querySucceeds(
-    bridg.blog.findMany({ where: { title: TEST_TITLE_2 } }),
-    0
-  );
+  await querySucceeds(bridg.blog.findMany({ where: { title: TEST_TITLE_2 } }), 0);
   await querySucceeds(bridg.blog.findFirst({ where: { title: TEST_TITLE } }));
   await querySucceeds(bridg.blog.findFirst({ where: { title: TEST_TITLE } }));
-  await querySucceeds(
-    bridg.blog.findFirstOrThrow({ where: { title: TEST_TITLE } })
-  );
+  await querySucceeds(bridg.blog.findFirstOrThrow({ where: { title: TEST_TITLE } }));
   await querySucceeds(bridg.blog.findUnique({ where: { id: testBlog1.id } }));
-  await querySucceeds(
-    bridg.blog.findUniqueOrThrow({ where: { id: testBlog1.id } })
-  );
+  await querySucceeds(bridg.blog.findUniqueOrThrow({ where: { id: testBlog1.id } }));
   await querySucceeds(bridg.blog.count());
   // TODO:
   // await querySucceeds(bridg.blog.aggregate({ where: { id: testBlog.id } }));
@@ -190,10 +162,7 @@ it('Update rules work with where clauses', async () => {
       data: { body: TEST_UPDATE_BODY },
     })
   );
-  await querySucceeds(
-    bridg.blog.updateMany({ data: { body: TEST_UPDATE_BODY } }),
-    0
-  );
+  await querySucceeds(bridg.blog.updateMany({ data: { body: TEST_UPDATE_BODY } }), 0);
 
   expect((await fetchBlog1())?.body).toBeNull(); // record wasn't updated
 
@@ -226,9 +195,7 @@ it('Create rules work with true/false', async () => {
 
   // SUCCESS
   setRules({ blog: { create: true } });
-  const b1 = await querySucceeds(
-    bridg.blog.create({ data: { title: TEST_TITLE } })
-  );
+  const b1 = await querySucceeds(bridg.blog.create({ data: { title: TEST_TITLE } }));
   expect(b1?.title).toBe(TEST_TITLE);
 });
 
@@ -251,10 +218,7 @@ it('Delete rules work with where clauses', async () => {
   // FAIL
   setRules({ blog: { delete: { title: 'TITLE_THAT_DOESNT_EXIST' } } });
   await queryFails(bridg.blog.delete({ where: { id: testBlog1.id } }));
-  await querySucceeds(
-    bridg.blog.deleteMany({ where: { id: testBlog1.id } }),
-    0
-  );
+  await querySucceeds(bridg.blog.deleteMany({ where: { id: testBlog1.id } }), 0);
 
   // SUCCESS
   setRules({ blog: { delete: { title: TEST_TITLE } } });
@@ -319,12 +283,8 @@ it('Find rules work with nested relations', async () => {
   await queryFails(bridg.user.findMany({ include }));
   await queryFails(bridg.user.findFirst({ include }));
   await queryFails(bridg.user.findFirstOrThrow({ include }));
-  await queryFails(
-    bridg.user.findUnique({ where: { id: testBlog1.id }, include })
-  );
-  await queryFails(
-    bridg.user.findUniqueOrThrow({ where: { id: testBlog1.id }, include })
-  );
+  await queryFails(bridg.user.findUnique({ where: { id: testBlog1.id }, include }));
+  await queryFails(bridg.user.findUniqueOrThrow({ where: { id: testBlog1.id }, include }));
 
   //SUCCESS
   setRules({
@@ -335,12 +295,8 @@ it('Find rules work with nested relations', async () => {
   await querySucceeds(bridg.user.findMany({ include }));
   await querySucceeds(bridg.user.findFirst({ include }));
   await querySucceeds(bridg.user.findFirstOrThrow({ include }));
-  await querySucceeds(
-    bridg.user.findUnique({ where: { id: testUser.id }, include })
-  );
-  await querySucceeds(
-    bridg.user.findUniqueOrThrow({ where: { id: testUser.id }, include })
-  );
+  await querySucceeds(bridg.user.findUnique({ where: { id: testUser.id }, include }));
+  await querySucceeds(bridg.user.findUniqueOrThrow({ where: { id: testUser.id }, include }));
 });
 
 it('Find rules work on update includes', async () => {
@@ -394,9 +350,7 @@ it('Find rules work on update includes', async () => {
 it('Find rules work on delete includes', async () => {
   // FAIL
   setRules({ blog: { delete: true }, user: { find: false } });
-  await queryFails(
-    bridg.blog.delete({ where: { id: testBlog1.id }, include: { user: true } })
-  );
+  await queryFails(bridg.blog.delete({ where: { id: testBlog1.id }, include: { user: true } }));
   // DEEP
   setRules({
     blog: { find: true },
@@ -412,9 +366,7 @@ it('Find rules work on delete includes', async () => {
 
   // SUCCESS
   setRules({ blog: { delete: true }, user: { find: true } });
-  await querySucceeds(
-    bridg.blog.delete({ where: { id: testBlog1.id }, include: { user: true } })
-  );
+  await querySucceeds(bridg.blog.delete({ where: { id: testBlog1.id }, include: { user: true } }));
   // DEEP
   setRules({
     blog: { find: true },
@@ -774,9 +726,7 @@ it('Supports model.rule property as an alternative for setting rules', async () 
       update: { rule: () => ({ id: testBlog1.id }) },
     },
   });
-  const b1 = await querySucceeds(
-    bridg.blog.create({ data: { title: TEST_TITLE } })
-  );
+  const b1 = await querySucceeds(bridg.blog.create({ data: { title: TEST_TITLE } }));
   expect(b1?.title).toBe(TEST_TITLE);
   await querySucceeds(bridg.blog.create({ data: { title: TEST_TITLE } }));
   await querySucceeds(bridg.blog.findMany(), 1);

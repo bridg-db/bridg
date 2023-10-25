@@ -48,51 +48,54 @@ _Want an example project for your favorite framework? Feel free to [create an is
 ### Add Bridg to an existing project
 
 1. [Configure your project to use Prisma ](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres) (Bridg currently requires prisma `5.0.0` or later.)
-    ```shell
-    npm i -D prisma
-    npm i @prisma/client
-    npx prisma init --datasource-provider sqlite
-    # opts: postgresql, mysql, sqlite, sqlserver, mongodb, cockroachdb
-    ```
+   ```shell
+   npm i -D prisma
+   npm i @prisma/client
+   npx prisma init --datasource-provider sqlite
+   # opts: postgresql, mysql, sqlite, sqlserver, mongodb, cockroachdb
+   ```
 2. Install Bridg: `npm install bridg`
 3. Add the Bridg generator to your `schema.prisma` :
-    ```ts
-    generator client {
-      provider = "prisma-client-js"
-    }
-    
-    // Add this UNDER your prisma client
-    generator bridg {
-      provider = "bridg"
-    }
-    ```
+
+   ```ts
+   generator client {
+     provider = "prisma-client-js"
+   }
+
+   // Add this UNDER your prisma client
+   generator bridg {
+     provider = "bridg"
+   }
+   ```
+
 4. Generate your clients: `npx prisma generate`
 5. Expose an API endpoint at `/api/bridg` or configure a [custom endpoint](#Generator-Options) to handle requests:
-    ```ts
-    // Example Next.js API handler, translate to your JS API framework of choice
-    import { handleRequest } from 'bridg/server/request-handler';
-    import { PrismaClient } from '@prisma/client';
-    
-    const db = new PrismaClient();
-    
-    // allows all requests, don't ship like this, ya dingus
-    const rules = { default: true };
-    
-    export default async function handler(req, res) {
-      // Mock authentication, replace with any auth system you want
-      const userId = 'authenticated-user-id';
-    
-      // pass the request (req.body), your prisma client (db),
-      // the user making the request (uid), and your database rules (rules)
-      const { data, status } = await handleRequest(req.body, {
-        db,
-        uid: userId,
-        rules,
-      });
-    
-      return res.status(status).json(data);
-    }
-    ```
+
+   ```ts
+   // Example Next.js API handler, translate to your JS API framework of choice
+   import { handleRequest } from 'bridg/server/request-handler';
+   import { PrismaClient } from '@prisma/client';
+
+   const db = new PrismaClient();
+
+   // allows all requests, don't ship like this, ya dingus
+   const rules = { default: true };
+
+   export default async function handler(req, res) {
+     // Mock authentication, replace with any auth system you want
+     const userId = 'authenticated-user-id';
+
+     // pass the request (req.body), your prisma client (db),
+     // the user making the request (uid), and your database rules (rules)
+     const { data, status } = await handleRequest(req.body, {
+       db,
+       uid: userId,
+       rules,
+     });
+
+     return res.status(status).json(data);
+   }
+   ```
 
 You should be good to go! Try using the Bridg client on your frontend:
 
@@ -257,6 +260,8 @@ Because your database is now available on the frontend, that means anyone who ca
 Your rules could look something like the following:
 
 ```ts
+import { type DbRules } from 'bridg/server';
+
 export const rules: DbRules = {
   user: {
     find: { profileIsPublic: true }, // only allow reads on public profiles

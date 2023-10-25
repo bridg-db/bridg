@@ -5,7 +5,7 @@
   "main": "src/app.js",
   "license": "MIT",
   "scripts": {
-    "test:prepare": "npx prisma db push --schema=__tests__/__fixtures__/test.prisma;",
+    "test:prepare": "cd ../generator && npm run prepack && cd ../usage && npx prisma db push --schema=__tests__/__fixtures__/test.prisma;",
     "test": "jest --runInBand",
     "test:prisma-versions": "npx ts-node ./scripts/test-prisma-versions.ts",
     "prisma:install": "pnpm i -D prisma@$VERSION && pnpm i @prisma/client@$VERSION",

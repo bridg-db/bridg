@@ -4,6 +4,7 @@ yarn-error.log
 build
 pnpm-debug.log
 .env*
+.DS_Store
 
 # some random testing crap
 /packages/usage/output

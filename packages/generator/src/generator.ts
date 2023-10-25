@@ -1,18 +1,10 @@
 import { generatorHandler, GeneratorOptions } from '@prisma/generator-helper';
-import { renameSync, rmSync } from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
 import { compileTsDir } from './compileTsDir';
 import { GENERATOR_NAME, VERSION } from './constants';
-import {
-  generateBridgTsFiles,
-  generateRulesFile,
-} from './generator/ts-generation';
-import {
-  deleteDirSafely,
-  deleteFileSafely,
-  moveDirContentsToDirectory,
-} from './utils/file.util';
+import { generateBridgTsFiles, generateRulesFile } from './generator/ts-generation';
+import { deleteDirSafely, deleteFileSafely } from './utils/file.util';
 
 generatorHandler({
   onManifest() {
@@ -28,32 +20,20 @@ generatorHandler({
   onGenerate: async (options: GeneratorOptions) => {
     const debug = options.generator.config.debug === 'true';
     const outRoot = options.generator.output?.value || './node_modules/bridg';
-    const tempDir = path.join(outRoot, 'tmp');
-    const tsOutTempDir = path.join(tempDir, 'output');
+    const tempDir = outRoot + '_tmp';
 
     cleanupPreviouslyGeneratedFiles(outRoot);
     generateBridgTsFiles(options, tempDir);
-    compileBridgFiles(tempDir, tsOutTempDir, debug);
+    compileBridgFiles(tempDir, outRoot, debug);
+    deleteDirSafely(tempDir);
     generateRulesFile(options, outRoot);
-
-    // move files to desired output location, cleanup temp dir
-    await moveDirContentsToDirectory(
-      path.join(tsOutTempDir, 'client'),
-      outRoot
-    );
-    renameSync(path.join(tsOutTempDir, 'server'), path.join(outRoot, 'server'));
-    rmSync(tempDir, { recursive: true, force: true });
 
     return;
   },
 });
 
-const compileBridgFiles = (
-  sourceDir: string,
-  outDir: string,
-  debug = false
-) => {
-  // capture meaningless error output
+const compileBridgFiles = (sourceDir: string, outDir: string, debug = false) => {
+  // capture unimportant ts error output
   const originalConsoleLog = console.log;
   if (debug) console.log = function () {};
   compileTsDir(sourceDir, {
@@ -73,7 +53,7 @@ const compileBridgFiles = (
 
 const cleanupPreviouslyGeneratedFiles = (baseDir: string) => {
   deleteDirSafely(path.join(baseDir, 'server'));
-  deleteDirSafely(path.join(baseDir, 'tmp'));
+  deleteDirSafely(baseDir + '_tmp');
   deleteFileSafely(path.join(baseDir, 'index.js'));
   deleteFileSafely(path.join(baseDir, 'index.ts'));
 };
