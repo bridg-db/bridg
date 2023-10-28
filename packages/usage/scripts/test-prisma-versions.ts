@@ -37,8 +37,7 @@ export const prepareEnv = async (prismaVersion: string) => {
   console.log('starting tests...');
 
   try {
-    // execSyncNoOut(`npm run test`);
-    execSync(`npm run test`);
+    execSyncNoOut(`npm run test`);
   } catch (err) {
     console.log('Tests failed.');
     failed.push(prismaVersion);
