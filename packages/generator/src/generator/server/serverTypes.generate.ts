@@ -9,8 +9,8 @@ export const generateServerTypes = (models: string[]) => {
   return `
   type HideableProps<ModelWhereInput> = (keyof Omit<ModelWhereInput, 'AND' | 'OR' | 'NOT'>)[];
   type WhitelistOption<ModelWhereInput> =
-    | { shown: HideableProps<ModelWhereInput>; hidden?: never }
-    | { hidden: HideableProps<ModelWhereInput>; shown?: never }
+    | { allowedFields: HideableProps<ModelWhereInput>; blockedFields?: never }
+    | { blockedFields: HideableProps<ModelWhereInput>; allowedFields?: never }
     | {};
   declare type OptionalPromise<T> = T | Promise<T>;
   declare type RuleCallback<ReturnType, CreateInput = undefined> = CreateInput extends undefined

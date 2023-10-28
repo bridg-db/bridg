@@ -81,12 +81,12 @@ type BlogField = typeof blogFields[number];
 const userFields = ['id', 'name', 'email', 'image', 'createdAt', 'updatedAt', 'blogs'] as const;
 type UserField = typeof userFields[number];
 
-const getShownEquivalentForUserFields = (hiddenFields: UserField[]) =>
-  userFields.filter((k) => !hiddenFields.includes(k as UserField)) as UserField[];
-const getShownEquivalentForBlogFields = (hiddenFields: BlogField[]) =>
-  blogFields.filter((k) => !hiddenFields.includes(k as BlogField)) as BlogField[];
+const getAllowedEquivalentForUserFields = (blockedFields: UserField[]) =>
+  userFields.filter((k) => !blockedFields.includes(k as UserField)) as UserField[];
+const getAllowedEquivalentForBlogFields = (blockedFields: BlogField[]) =>
+  blogFields.filter((k) => !blockedFields.includes(k as BlogField)) as BlogField[];
 
-it('Shown/hidden property prevents reading fields', async () => {
+it('Allowed/blocked property prevents reading fields', async () => {
   const shallowFindTest = async () => {
     const findMany1 = await querySucceeds(bridg.blog.findMany(), 2);
     expect(findMany1[0].title).toBeUndefined();
@@ -98,29 +98,29 @@ it('Shown/hidden property prevents reading fields', async () => {
     expect(findFirst1.published).toBeUndefined();
     expect(findFirst1.id).toBeDefined();
 
-    setRules({ blog: { find: { rule: true, hidden: ['id'] } } });
+    setRules({ blog: { find: { rule: true, blockedFields: ['id'] } } });
     const findMany2 = await querySucceeds(bridg.blog.findMany(), 2);
     expect(findMany2[0].title).toBeTruthy();
     expect(findMany2[0].published).toBeDefined();
     expect(findMany2[0].id).toBeUndefined();
   };
-  const hiddenFields: (keyof Blog)[] = ['title', 'published'];
-  // find.hidden
-  setRules({ blog: { find: { rule: true, hidden: hiddenFields } } });
+  const blockedFields: (keyof Blog)[] = ['title', 'published'];
+  // find.blocked
+  setRules({ blog: { find: { rule: true, blockedFields: blockedFields } } });
   await shallowFindTest();
-  // model.hidden
-  setRules({ blog: { find: true, hidden: hiddenFields } });
+  // model.blocked
+  setRules({ blog: { find: true, blockedFields: blockedFields } });
   await shallowFindTest();
-  const shownFields = getShownEquivalentForBlogFields(hiddenFields);
-  // find.shown
+  const allowedFieldsFields = getAllowedEquivalentForBlogFields(blockedFields);
+  // find.allowedFields
   setRules({
     blog: {
-      find: { rule: true, shown: shownFields },
+      find: { rule: true, allowedFields: allowedFieldsFields },
     },
   });
   await shallowFindTest();
-  // model.shown
-  setRules({ blog: { find: true, shown: shownFields } });
+  // model.allowedFields
+  setRules({ blog: { find: true, allowedFields: allowedFieldsFields } });
 
   await shallowFindTest();
 
@@ -137,27 +137,27 @@ it('Shown/hidden property prevents reading fields', async () => {
     expect(findMany3[0].user.blogs[0].title).toBeUndefined();
     expect(findMany3[0].user.blogs[0].id).toBeDefined();
   };
-  const blogNestedHidden = ['title'] as BlogField[];
-  const userNestedHidden = ['email'] as UserField[];
+  const blogNestedBlocked = ['title'] as BlogField[];
+  const userNestedBlocked = ['email'] as UserField[];
   setRules({
-    blog: { find: { rule: true, hidden: blogNestedHidden } },
-    user: { find: { rule: true, hidden: userNestedHidden } },
+    blog: { find: { rule: true, blockedFields: blogNestedBlocked } },
+    user: { find: { rule: true, blockedFields: userNestedBlocked } },
   });
   await nestedFindTest();
   setRules({
-    blog: { find: true, hidden: blogNestedHidden },
-    user: { find: true, hidden: userNestedHidden },
+    blog: { find: true, blockedFields: blogNestedBlocked },
+    user: { find: true, blockedFields: userNestedBlocked },
   });
   await nestedFindTest();
-  const blogNestedShown = getShownEquivalentForBlogFields(blogNestedHidden);
-  console.log('blog nested shown', blogNestedShown);
+  const blogNestedAllowed = getAllowedEquivalentForBlogFields(blogNestedBlocked);
+  console.log('blog nested allowedFields', blogNestedAllowed);
 
-  const userNestedShown = getShownEquivalentForUserFields(userNestedHidden);
-  console.log('usernestedshown', userNestedShown);
+  const userNestedAllowed = getAllowedEquivalentForUserFields(userNestedBlocked);
+  console.log('usernestedallowedFields', userNestedAllowed);
 
   setRules({
-    blog: { find: true, shown: blogNestedShown },
-    user: { find: true, shown: userNestedShown },
+    blog: { find: true, allowedFields: blogNestedAllowed },
+    user: { find: true, allowedFields: userNestedAllowed },
   });
   await nestedFindTest();
 });
@@ -165,49 +165,49 @@ it('Shown/hidden property prevents reading fields', async () => {
 const manyUserWithBlogs = () => bridg.user.findMany({ include: { blogs: true } });
 const firstUserWithBlogs = () => bridg.user.findFirst({ include: { blogs: true } });
 
-it('Hidden property prevents/allows including relations', async () => {
-  // hidden prevents querying
-  setRules({ user: { find: { rule: true, hidden: ['blogs'] } }, blog: { find: true } });
+it('Blocked property prevents/allows including relations', async () => {
+  // blocked prevents querying
+  setRules({ user: { find: { rule: true, blockedFields: ['blogs'] } }, blog: { find: true } });
   await queryFails(manyUserWithBlogs());
   await queryFails(firstUserWithBlogs());
-  // works if relation is included in hidden
-  setRules({ user: { find: { rule: true, hidden: [] } }, blog: { find: true } });
+  // works if relation is included in blocked
+  setRules({ user: { find: { rule: true, blockedFields: [] } }, blog: { find: true } });
   const manyBlogs = await querySucceeds(manyUserWithBlogs());
   expect(manyBlogs?.at(0).blogs.length).toBe(2);
   const firstBlog = await querySucceeds(firstUserWithBlogs());
   expect(firstBlog.blogs.length).toBe(2);
 });
 
-it('Shown property prevents/allows including relations', async () => {
-  // not in shown prevents querying
-  setRules({ user: { find: { rule: true, shown: ['id'] } }, blog: { find: true } });
+it('Allowed property prevents/allows including relations', async () => {
+  // not in allowedFields prevents querying
+  setRules({ user: { find: { rule: true, allowedFields: ['id'] } }, blog: { find: true } });
   await queryFails(manyUserWithBlogs());
   await queryFails(firstUserWithBlogs());
-  // works if relation is included in hidden
-  setRules({ user: { find: { rule: true, shown: ['blogs'] } }, blog: { find: true } });
-  const manyBlogsShown = await querySucceeds(manyUserWithBlogs());
-  expect(manyBlogsShown?.at(0).blogs.length).toBe(2);
-  const firstBlogShown = await querySucceeds(firstUserWithBlogs());
-  expect(firstBlogShown.blogs.length).toBe(2);
+  // works if relation is included in blocked
+  setRules({ user: { find: { rule: true, allowedFields: ['blogs'] } }, blog: { find: true } });
+  const manyBlogsAllowed = await querySucceeds(manyUserWithBlogs());
+  expect(manyBlogsAllowed?.at(0).blogs.length).toBe(2);
+  const firstBlogAllowed = await querySucceeds(firstUserWithBlogs());
+  expect(firstBlogAllowed.blogs.length).toBe(2);
 });
 
 const userSelect = () => bridg.user.findFirst({ select: { email: true, name: true } });
 const nestedUserSelect = () =>
   bridg.user.findFirst({ include: { blogs: { select: { body: true, id: true } } } });
 
-it('Hidden property prevents/allows selecting fields', async () => {
-  setRules({ user: { find: { rule: true, hidden: ['email'] } } });
+it('Blocked property prevents/allows selecting fields', async () => {
+  setRules({ user: { find: { rule: true, blockedFields: ['email'] } } });
   await queryFails(userSelect());
-  setRules({ user: { find: { rule: true, hidden: ['createdAt'] } } });
+  setRules({ user: { find: { rule: true, blockedFields: ['createdAt'] } } });
   await querySucceeds(userSelect());
   setRules({
-    user: { find: { rule: true, hidden: ['email'] } },
-    blog: { find: { rule: true, hidden: ['body'] } },
+    user: { find: { rule: true, blockedFields: ['email'] } },
+    blog: { find: { rule: true, blockedFields: ['body'] } },
   });
   await queryFails(nestedUserSelect());
   setRules({
-    user: { find: { rule: true, hidden: ['email'] } },
-    blog: { find: { rule: true, hidden: ['createdAt'] } },
+    user: { find: { rule: true, blockedFields: ['email'] } },
+    blog: { find: { rule: true, blockedFields: ['createdAt'] } },
   });
   const nestedRes = await querySucceeds(nestedUserSelect());
 
@@ -217,19 +217,19 @@ it('Hidden property prevents/allows selecting fields', async () => {
   expect(Object.keys(nestedRes.blogs[0]).length).toBe(2);
 });
 
-it('Shown property prevents/allows selecting fields', async () => {
-  setRules({ user: { find: { rule: true, shown: ['id'] } } });
+it('Allowed property prevents/allows selecting fields', async () => {
+  setRules({ user: { find: { rule: true, allowedFields: ['id'] } } });
   await queryFails(userSelect());
-  setRules({ user: { find: { rule: true, shown: ['email', 'name'] } } });
+  setRules({ user: { find: { rule: true, allowedFields: ['email', 'name'] } } });
   await querySucceeds(userSelect());
   setRules({
-    user: { find: { rule: true, shown: ['blogs'] } },
-    blog: { find: { rule: true, shown: ['id'] } },
+    user: { find: { rule: true, allowedFields: ['blogs'] } },
+    blog: { find: { rule: true, allowedFields: ['id'] } },
   });
   await queryFails(nestedUserSelect());
   setRules({
-    user: { find: { rule: true, shown: ['blogs'] } },
-    blog: { find: { rule: true, shown: ['body', 'id'] } },
+    user: { find: { rule: true, allowedFields: ['blogs'] } },
+    blog: { find: { rule: true, allowedFields: ['body', 'id'] } },
   });
   const nestedRes = await querySucceeds(nestedUserSelect());
   expect(nestedRes.email).toBeUndefined();
@@ -256,17 +256,19 @@ const testQueryByFields = async () => {
   });
 };
 
-it('Hidden property prevents querying by fields', async () => {
-  setRules({ blog: { find: { rule: true, hidden: ['id'] } } });
+it('Blocked property prevents querying by fields', async () => {
+  setRules({ blog: { find: { rule: true, blockedFields: ['id'] } } });
   await testQueryByFields();
 });
 
-it('Shown property prevents querying by fields', async () => {
-  setRules({ blog: { find: { rule: true, shown: getShownEquivalentForBlogFields(['id']) } } });
+it('Allowed property prevents querying by fields', async () => {
+  setRules({
+    blog: { find: { rule: true, allowedFields: getAllowedEquivalentForBlogFields(['id']) } },
+  });
   await testQueryByFields();
 });
 
-it('Hidden/shown prevent updates from returning data', async () => {
+it('Blocked/allowedFields prevent updates from returning data', async () => {
   const shallowUpdateTest = async () => {
     const update1 = await querySucceeds(
       bridg.blog.update({
@@ -281,14 +283,17 @@ it('Hidden/shown prevent updates from returning data', async () => {
   };
   setRules({
     blog: {
-      find: { rule: true, hidden: ['title', 'published'] },
+      find: { rule: true, blockedFields: ['title', 'published'] },
       update: true,
     },
   });
   await shallowUpdateTest();
   setRules({
     blog: {
-      find: { rule: true, shown: getShownEquivalentForBlogFields(['title', 'published']) },
+      find: {
+        rule: true,
+        allowedFields: getAllowedEquivalentForBlogFields(['title', 'published']),
+      },
       update: true,
     },
   });
@@ -321,11 +326,11 @@ it('Hidden/shown prevent updates from returning data', async () => {
 
   setRules({
     blog: {
-      find: { rule: true, hidden: ['title', 'published'] },
+      find: { rule: true, blockedFields: ['title', 'published'] },
       update: true,
     },
     user: {
-      find: { rule: true, hidden: ['name'] },
+      find: { rule: true, blockedFields: ['name'] },
       update: true,
     },
   });
@@ -333,11 +338,14 @@ it('Hidden/shown prevent updates from returning data', async () => {
 
   setRules({
     blog: {
-      find: { rule: true, shown: getShownEquivalentForBlogFields(['title', 'published']) },
+      find: {
+        rule: true,
+        allowedFields: getAllowedEquivalentForBlogFields(['title', 'published']),
+      },
       update: true,
     },
     user: {
-      find: { rule: true, shown: getShownEquivalentForUserFields(['name']) },
+      find: { rule: true, allowedFields: getAllowedEquivalentForUserFields(['name']) },
       update: true,
     },
   });
@@ -365,7 +373,7 @@ it('Sensitive fields cannot be updated', async () => {
         data: {
           name: 'edited2',
           blogs: {
-            //  blog.title hidden
+            //  blog.title blocked
             update: { where: { id: testBlog1.id }, data: { title: 'edited2' } },
           },
         },
@@ -375,7 +383,7 @@ it('Sensitive fields cannot be updated', async () => {
       bridg.user.update({
         where: { id: testUser.id },
         data: {
-          email: 'edited2', // user.email hidden
+          email: 'edited2', // user.email blocked
           blogs: {
             update: { where: { id: testBlog1.id }, data: { body: 'edited2' } },
           },
@@ -397,22 +405,22 @@ it('Sensitive fields cannot be updated', async () => {
 
   setRules({
     blog: {
-      find: { rule: true, hidden: ['published'] },
-      update: { rule: true, hidden: ['title'] },
+      find: { rule: true, blockedFields: ['published'] },
+      update: { rule: true, blockedFields: ['title'] },
     },
     user: {
-      update: { rule: true, hidden: ['email'] },
+      update: { rule: true, blockedFields: ['email'] },
     },
   });
   await updateTests();
 
   setRules({
     blog: {
-      find: { rule: true, shown: getShownEquivalentForBlogFields(['published']) },
-      update: { rule: true, shown: getShownEquivalentForBlogFields(['title']) },
+      find: { rule: true, allowedFields: getAllowedEquivalentForBlogFields(['published']) },
+      update: { rule: true, allowedFields: getAllowedEquivalentForBlogFields(['title']) },
     },
     user: {
-      update: { rule: true, shown: getShownEquivalentForUserFields(['email']) },
+      update: { rule: true, allowedFields: getAllowedEquivalentForUserFields(['email']) },
     },
   });
   await updateTests();
@@ -444,7 +452,7 @@ it('Sensitive fields cannot be used for creating data', async () => {
           blogs: {
             create: {
               title: 'test',
-              published: true, // hidden field
+              published: true, // blocked field
             },
           },
         },
@@ -464,12 +472,12 @@ it('Sensitive fields cannot be used for creating data', async () => {
 
   setRules({
     blog: {
-      find: { rule: true, hidden: ['title'] },
-      create: { rule: true, hidden: ['published'] },
+      find: { rule: true, blockedFields: ['title'] },
+      create: { rule: true, blockedFields: ['published'] },
     },
     user: {
-      find: { rule: true, hidden: ['email'] },
-      create: { rule: true, hidden: ['name'] },
+      find: { rule: true, blockedFields: ['email'] },
+      create: { rule: true, blockedFields: ['name'] },
     },
   });
   await createTests();
@@ -478,12 +486,12 @@ it('Sensitive fields cannot be used for creating data', async () => {
 
   setRules({
     blog: {
-      find: { rule: true, shown: getShownEquivalentForBlogFields(['title']) },
-      create: { rule: true, shown: getShownEquivalentForBlogFields(['published']) },
+      find: { rule: true, allowedFields: getAllowedEquivalentForBlogFields(['title']) },
+      create: { rule: true, allowedFields: getAllowedEquivalentForBlogFields(['published']) },
     },
     user: {
-      find: { rule: true, shown: getShownEquivalentForUserFields(['email']) },
-      create: { rule: true, shown: getShownEquivalentForUserFields(['name']) },
+      find: { rule: true, allowedFields: getAllowedEquivalentForUserFields(['email']) },
+      create: { rule: true, allowedFields: getAllowedEquivalentForUserFields(['name']) },
     },
   });
   await createTests();
@@ -499,26 +507,28 @@ it('Cannot delete data by querying sensitive fields', async () => {
     await querySucceeds(bridg.blog.deleteMany({ where: {} }), 2);
   };
 
-  setRules({ blog: { delete: { rule: true, hidden: ['id'] } } });
+  setRules({ blog: { delete: { rule: true, blockedFields: ['id'] } } });
   await deleteViaSensitiveFields();
   await resetDbData();
   await createFakeData();
-  setRules({ blog: { delete: { rule: true, shown: getShownEquivalentForBlogFields(['id']) } } });
+  setRules({
+    blog: { delete: { rule: true, allowedFields: getAllowedEquivalentForBlogFields(['id']) } },
+  });
   await deleteViaSensitiveFields();
 });
 
-it('Hidden/shown respects method level fields over model level', async () => {
+it('Blocked/allowedFields respects method level fields over model level', async () => {
   const modelLevelTest = async () => {
     await queryFails(bridg.blog.findMany({ where: { id: testBlog1.id } }));
     await querySucceeds(bridg.blog.findMany({ where: { title: testBlog1.title } }));
   };
 
-  setRules({ blog: { find: { rule: true, hidden: ['id'] }, hidden: ['title'] } });
+  setRules({ blog: { find: { rule: true, blockedFields: ['id'] }, blockedFields: ['title'] } });
   await modelLevelTest();
   setRules({
     blog: {
-      find: { rule: true, shown: getShownEquivalentForBlogFields(['id']) },
-      shown: getShownEquivalentForBlogFields(['title']),
+      find: { rule: true, allowedFields: getAllowedEquivalentForBlogFields(['id']) },
+      allowedFields: getAllowedEquivalentForBlogFields(['title']),
     },
   });
   await modelLevelTest();
@@ -531,9 +541,11 @@ it('Sensitive props falls back to model level if no method level available', asy
     await querySucceeds(bridg.blog.findMany({ where: { id: testBlog1.id } }));
   };
 
-  setRules({ blog: { find: { rule: true }, hidden: ['title'] } });
+  setRules({ blog: { find: { rule: true }, blockedFields: ['title'] } });
   await testModelProp();
-  setRules({ blog: { find: { rule: true }, shown: getShownEquivalentForBlogFields(['title']) } });
+  setRules({
+    blog: { find: { rule: true }, allowedFields: getAllowedEquivalentForBlogFields(['title']) },
+  });
   await testModelProp();
 
   // uses blog.update.prop for update, but blog.prop for data returned
@@ -549,14 +561,18 @@ it('Sensitive props falls back to model level if no method level available', asy
     expect(res.title).toBeUndefined();
   };
   setRules({
-    blog: { find: { rule: true }, update: { rule: true, hidden: ['title'] }, hidden: ['title'] },
+    blog: {
+      find: { rule: true },
+      update: { rule: true, blockedFields: ['title'] },
+      blockedFields: ['title'],
+    },
   });
   await testMultiLevelProps();
   setRules({
     blog: {
       find: { rule: true },
-      update: { rule: true, shown: getShownEquivalentForBlogFields(['title']) },
-      shown: getShownEquivalentForBlogFields(['title']),
+      update: { rule: true, allowedFields: getAllowedEquivalentForBlogFields(['title']) },
+      allowedFields: getAllowedEquivalentForBlogFields(['title']),
     },
   });
   await testMultiLevelProps();
@@ -565,28 +581,32 @@ it('Sensitive props falls back to model level if no method level available', asy
     await queryFails(bridg.user.findMany({ where: { email: testUser.email } }));
     await queryFails(bridg.user.create({ data: { email: 'test', name: 'test' } }));
     const res2 = await querySucceeds(bridg.user.create({ data: { email: 'test' } }));
-    // respects user.hidden for returning data, since no find rule is available
+    // respects user.blocked for returning data, since no find rule is available
     expect(res2.name).toBeDefined();
     expect(res2.email).toBeUndefined();
   };
-  // user.create.hidden overrides user.hidden
+  // user.create.blocked overrides user.blocked
   setRules({
-    user: { default: true, hidden: ['email'], create: { rule: true, hidden: ['name'] } },
+    user: {
+      default: true,
+      blockedFields: ['email'],
+      create: { rule: true, blockedFields: ['name'] },
+    },
   });
   await testMultilevelCreate();
   await resetDbData();
   setRules({
     user: {
       default: true,
-      shown: getShownEquivalentForUserFields(['email']),
-      create: { rule: true, shown: getShownEquivalentForUserFields(['name']) },
+      allowedFields: getAllowedEquivalentForUserFields(['email']),
+      create: { rule: true, allowedFields: getAllowedEquivalentForUserFields(['name']) },
     },
   });
   await testMultilevelCreate();
 });
 
-// test mixing them at different levels, ie: model.hidden, and model.method.shown
-it('Model.shown gets overridden by method.hidden', async () => {
+// test mixing them at different levels, ie: model.blocked, and model.method.allowedFields
+it('Model.allowedFields gets overridden by method.blocked', async () => {
   const runTest = async () => {
     await queryFails(bridg.blog.findFirst({ select: { id: true } }));
     const res1 = await querySucceeds(bridg.blog.findFirst({ select: { body: true } }));
@@ -598,20 +618,20 @@ it('Model.shown gets overridden by method.hidden', async () => {
   };
   setRules({
     blog: {
-      shown: ['body'],
+      allowedFields: ['body'],
       find: {
         rule: true,
-        hidden: ['id', 'createdAt'],
+        blockedFields: ['id', 'createdAt'],
       },
     },
   });
   await runTest();
   setRules({
     blog: {
-      hidden: ['body'],
+      blockedFields: ['body'],
       find: {
         rule: true,
-        shown: getShownEquivalentForBlogFields(['id', 'createdAt']),
+        allowedFields: getAllowedEquivalentForBlogFields(['id', 'createdAt']),
       },
     },
   });

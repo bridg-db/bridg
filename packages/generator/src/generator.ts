@@ -20,6 +20,8 @@ generatorHandler({
   onGenerate: async (options: GeneratorOptions) => {
     const debug = options.generator.config.debug === 'true';
     const outRoot = options.generator.output?.value || './node_modules/bridg';
+    // keep at same level, dont make /tmp a subdirectory
+    // causes issues when trying to import custom prisma output paths
     const tempDir = outRoot + '_tmp';
 
     cleanupPreviouslyGeneratedFiles(outRoot);
