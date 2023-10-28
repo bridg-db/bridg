@@ -150,11 +150,7 @@ it('Allowed/blocked property prevents reading fields', async () => {
   });
   await nestedFindTest();
   const blogNestedAllowed = getAllowedEquivalentForBlogFields(blogNestedBlocked);
-  console.log('blog nested allowedFields', blogNestedAllowed);
-
   const userNestedAllowed = getAllowedEquivalentForUserFields(userNestedBlocked);
-  console.log('usernestedallowedFields', userNestedAllowed);
-
   setRules({
     blog: { find: true, allowedFields: blogNestedAllowed },
     user: { find: true, allowedFields: userNestedAllowed },
