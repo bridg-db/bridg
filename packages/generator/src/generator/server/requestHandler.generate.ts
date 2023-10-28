@@ -89,17 +89,34 @@ const applyRulesWheres = async (
   const modelDefaultValidator = rules[model]?.default;
   // can't use "a || b || c", bc it would inadvertently skip "method:false" rules
   let queryValidator = modelMethodValidator ?? modelDefaultValidator ?? !!rules.default;
+  // @ts-ignore
   let hiddenFields: string[] = rules[model]?.hidden || [];
+  // @ts-ignore
+  let shownFields: string[] = rules[model]?.shown;
 
   if (typeof queryValidator === 'object' && 'rule' in queryValidator) {
+    // @ts-ignore
     hiddenFields = queryValidator.hidden || hiddenFields;
+    // @ts-ignore
+    shownFields = queryValidator.shown || shownFields;
+    // @ts-ignore
+    if(queryValidator.shown && !queryValidator.hidden) {
+      // method.shown overrides model.hidden
+      hiddenFields = [];
+    }
+
     queryValidator = queryValidator.rule;
   }
-  if (hiddenFields.length) {
-    const keys = [...Object.keys(args.where || {}), ...Object.keys(args.data || {})];
+  shownFields = shownFields?.filter((key) => !hiddenFields.includes(key));
+  if (hiddenFields.length || shownFields?.length) {
+    const keys = [...Object.keys(args.where || {}), ...Object.keys(args.data || {}), ...Object.keys(args.include || {}), ...Object.keys(args.select || {}),];
     const fieldsBeingAccessed = Array.from(new Set(keys));
-    const queryHasHiddenFields = fieldsBeingAccessed.some((key) => hiddenFields.includes(key));
-    if (queryHasHiddenFields) throw { message: 'Unauthorized', data: { model } };
+    const queryHasIllegalFields = shownFields ? 
+      !fieldsBeingAccessed.every((key) => shownFields.includes(key)) : 
+      fieldsBeingAccessed.some((key) => hiddenFields.includes(key));
+    if (queryHasIllegalFields) {
+      throw { message: 'Unauthorized', data: { model } };
+    }
   }
 
   const ruleWhereOrBool =
@@ -217,11 +234,16 @@ const stripHiddenFields = (data: {} | any[], rules: DbRules): any => {
     const model = data?.['$kind'];
 
     // @ts-ignore
-    const hiddenFields: string[] = rules[model]?.find?.hidden || rules[model]?.hidden || [];
+    let hiddenFields: string[] = rules[model]?.find?.hidden || rules[model]?.hidden || [];
+    // @ts-ignore
+    if(rules[model]?.find?.shown && !rules[model]?.find?.hidden) hiddenFields = [];
     hiddenFields.push('$kind');
+    // @ts-ignore
+    let shownFields: string[] | undefined = rules[model]?.find?.shown || rules[model]?.shown;
+    shownFields = shownFields?.filter((key) => !hiddenFields.includes(key));
 
     Object.keys(data).forEach((key) => {
-      const legalKey = !hiddenFields.includes(key);
+      const legalKey = shownFields ? shownFields.includes(key) : !hiddenFields.includes(key);
       if (legalKey) {
         const isNestedData =
           typeof data[key] === 'object' &&

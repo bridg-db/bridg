@@ -7,6 +7,11 @@ export const generateServerTypes = (models: string[]) => {
   models = models || [];
 
   return `
+  type HideableProps<ModelWhereInput> = (keyof Omit<ModelWhereInput, 'AND' | 'OR' | 'NOT'>)[];
+  type WhitelistOption<ModelWhereInput> =
+    | { shown: HideableProps<ModelWhereInput>; hidden?: never }
+    | { hidden: HideableProps<ModelWhereInput>; shown?: never }
+    | {};
   declare type OptionalPromise<T> = T | Promise<T>;
   declare type RuleCallback<ReturnType, CreateInput = undefined> = CreateInput extends undefined
     ? (uid?: string) => OptionalPromise<ReturnType>
@@ -14,28 +19,24 @@ export const generateServerTypes = (models: string[]) => {
   declare type RuleOrCallback<RuleOptions, CreateInput> =
     | RuleOptions
     | RuleCallback<RuleOptions, CreateInput>;
-  declare type BridgRule<Model, RuleOptions, CreateInput = undefined> =
+  declare type BridgRule<ModelWhereInput, RuleOptions, CreateInput = undefined> =
     | RuleOrCallback<RuleOptions, CreateInput>
-    | {
-        rule: RuleOrCallback<RuleOptions, CreateInput>;
-        hidden?: (keyof Model)[];
-      };
-  declare type ModelRules<Model, WhereInput, CreateInput> = Partial<{
-    find: BridgRule<Model, boolean | WhereInput>;
-    update: BridgRule<Model, boolean | WhereInput, CreateInput>;
-    create: BridgRule<Model, boolean, CreateInput>;
-    delete: BridgRule<Model, boolean | WhereInput>;
-    default: BridgRule<Model, boolean, CreateInput>;
-    hidden?: string[];
-  }>;
+    | ({ rule: RuleOrCallback<RuleOptions, CreateInput> } & WhitelistOption<ModelWhereInput>);
+  declare type ModelRules<WhereInput, CreateInput> = Partial<
+    {
+      find: BridgRule<WhereInput, boolean | WhereInput>;
+      update: BridgRule<WhereInput, boolean | WhereInput, CreateInput>;
+      create: BridgRule<WhereInput, boolean, CreateInput>;
+      delete: BridgRule<WhereInput, boolean | WhereInput>;
+      default: BridgRule<WhereInput, boolean, CreateInput>;
+    } & WhitelistOption<WhereInput>
+  >;
 
-  // TODO: investigate getting input types via generics, so we only have to send the model name:
-  // https://github.com/prisma/prisma/issues/6980
   export type DbRules = Partial<{${models.reduce(
     (acc, Model) =>
       `${acc}\n  ${uncapitalize(
         Model
-      )}: ModelRules<${Model}, Prisma.${Model}WhereInput, Prisma.${Model}UncheckedCreateInput>;`,
+      )}: ModelRules<Prisma.${Model}WhereInput, Prisma.${Model}UncheckedCreateInput>;`,
     `\n  default: boolean;`
   )}
   }>;
