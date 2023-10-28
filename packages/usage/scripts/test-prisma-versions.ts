@@ -1,7 +1,11 @@
+// TODO: 5.1.0 fails because model.count() doesn't work for some reason, investigate
+//
+// RUN WITH NPM NOT YARN, WON'T WORK WITH YARN
+// ❌ yarn test:prisma-versions
+// ✅ npm run test:prisma-versions
 import { execSync } from 'child_process';
 
-const execSyncNoOut = (cmd: string) =>
-  execSync(cmd, { stdio: 'pipe' }).toString();
+const execSyncNoOut = (cmd: string) => execSync(cmd, { stdio: 'pipe' }).toString();
 
 const getRecentPrismaVersions = () => {
   const versionsOutput = execSyncNoOut(`npm run prisma:versions`);
@@ -14,6 +18,8 @@ const getRecentPrismaVersions = () => {
   return prismaVersions.slice(prismaVersions.indexOf('5.0.0'));
 };
 
+// TEST A PARTICULAR VERSION:
+// const PRISMA_VERSIONS = ['5.0.0'];
 const PRISMA_VERSIONS = getRecentPrismaVersions();
 const success: string[] = [];
 const failed: string[] = [];

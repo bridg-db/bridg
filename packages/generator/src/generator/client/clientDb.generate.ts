@@ -1,10 +1,10 @@
-import { writeFileSafely } from '../../utils/file.util';
+import path from 'path';
+import { getRelativeImportPath, writeFileSafely } from '../../utils/file.util';
 import { capitalize, uncapitalize } from '../../utils/string.util';
 
 const generateExports = (models: string[]) => {
   const exports = models.reduce(
-    (acc, model) =>
-      `${acc}\n  ${uncapitalize(model)}:${uncapitalize(model)}Client,`,
+    (acc, model) => `${acc}\n  ${uncapitalize(model)}:${uncapitalize(model)}Client,`,
     ``
   );
 
@@ -12,7 +12,6 @@ const generateExports = (models: string[]) => {
 };
 
 const getHead = (apiLocation = '/api/bridg') => `
-import { Prisma } from '@prisma/client';
    
 export const exec = ({ model, args, func = 'findMany' }: { model: string; args?: {}; func: string }) =>
   fetch('${apiLocation}', {
@@ -56,20 +55,30 @@ const genModelClient = (model: string) =>
     capitalize(model)
   );
 
-export const generateClientDbFile = (
-  models: string[],
-  outputLocation: string,
-  apiLocation: string
-) => {
-  const modelClients = models.reduce(
-    (acc, model) => `${acc}${genModelClient(model)}`,
-    ``
-  );
-  const clientDbCode = `${getHead(apiLocation)}${modelClients}${generateExports(
-    models
+export const generateClientDbFile = ({
+  modelNames,
+  outputLocation,
+  apiLocation,
+  prismaLocation,
+}: {
+  modelNames: string[];
+  outputLocation: string;
+  apiLocation: string;
+  prismaLocation?: string;
+}) => {
+  const filePath = path.join(outputLocation, 'index.ts');
+
+  const prismaImportPath = prismaLocation
+    ? getRelativeImportPath(filePath, prismaLocation)
+    : `@prisma/client`;
+
+  const importStatement = `import { Prisma } from '${prismaImportPath}';`;
+  const modelClients = modelNames.reduce((acc, model) => `${acc}${genModelClient(model)}`, ``);
+  const clientDbCode = `${importStatement}${getHead(apiLocation)}${modelClients}${generateExports(
+    modelNames
   )}`;
 
   //   writeFileSafely(`${'./node_modules/bridg/dist/package'}/client/db.ts`, clientDbCode);
-  writeFileSafely(`${outputLocation}/client/index.ts`, clientDbCode);
+  writeFileSafely(`${outputLocation}/index.ts`, clientDbCode);
   return clientDbCode;
 };

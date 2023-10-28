@@ -1,8 +1,9 @@
 import path from 'path';
 import { getRelativeImportPath, writeFileSafely } from '../../utils/file.util';
-import { generateServerTypes } from './serverTypes.generate';
 
 const HANDLER_TEMPLATE = `
+import { DbRules, ModelName, models } from '.';
+import { MODEL_RELATION_MAP } from './model-relations';
 
 export const handleRequest = async (
   requestBody: {
@@ -14,8 +15,10 @@ export const handleRequest = async (
     db: PrismaClient;
     rules: DbRules;
     uid?: string;
-  },
+  }
 ) => {
+  const typedClient = withTypename(config.db);
+
   let { model, func, args } = requestBody;
   if (!models.includes(model)) return { status: 401, data: { error: 'Unauthorized', model } };
   args = args || {};
@@ -44,28 +47,41 @@ export const handleRequest = async (
     await applyRulesWheres(args, { model, method }, { uid, rules });
   } catch (err: any) {
     if (err?.message === 'Unauthorized') {
-      return { status: 401, data: { error: \`Unauthorized Bridg query on model: \${err?.data?.model}\` } };
+      return {
+        status: 401,
+        data: {
+          error: \`Unauthorized Bridg query on model: \${err?.data?.model}\`,
+        },
+      };
     } else {
-      return { status: 400, data: { error: \`Error executing Bridg query: \${err?.message}\` } };
+      return {
+        status: 400,
+        data: { error: \`Error executing Bridg query: \${err?.message}\` },
+      };
     }
   }
 
-  let data;
+  let cleanedData;
   try {
     // @ts-ignore
-    data = await db[model][func](args);
+    const data = await typedClient[model][func](args);
+    cleanedData = stripBlockedFields(data, rules);
   } catch (error) {
     console.error(error);
     return { status: 500, message: 'Internal server error.' };
   }
 
-  return { status: 200, data };
+  return { status: 200, data: cleanedData };
 };
 
 const applyRulesWheres = async (
-  args: { where?: any; include?: any; data?: any },
-  options: { model: ModelName; acceptsWheres?: boolean; method: 'find' | 'create' | 'update' | 'delete' },
-  context: { uid?: string; rules: DbRules },
+  args: { where?: any; include?: any; data?: any; select?: any },
+  options: {
+    model: ModelName;
+    acceptsWheres?: boolean;
+    method: 'find' | 'create' | 'update' | 'delete';
+  },
+  context: { uid?: string; rules: DbRules }
 ) => {
   const { uid, rules } = context;
   const { model, acceptsWheres = true, method } = options;
@@ -73,15 +89,45 @@ const applyRulesWheres = async (
   const modelDefaultValidator = rules[model]?.default;
   // can't use "a || b || c", bc it would inadvertently skip "method:false" rules
   let queryValidator = modelMethodValidator ?? modelDefaultValidator ?? !!rules.default;
-  queryValidator = queryValidator?.rule ?? queryValidator;
-  const ruleWhereOrBool = typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
+  // @ts-ignore
+  let blockedFields: string[] = rules[model]?.blockedFields || [];
+  // @ts-ignore
+  let allowedFields: string[] = rules[model]?.allowedFields;
+
+  if (typeof queryValidator === 'object' && 'rule' in queryValidator) {
+    // @ts-ignore
+    blockedFields = queryValidator.blockedFields || blockedFields;
+    // @ts-ignore
+    allowedFields = queryValidator.allowedFields || allowedFields;
+    // @ts-ignore
+    if(queryValidator.allowedFields && !queryValidator.blockedFields) {
+      // method.allowedFields overrides model.blockedFields
+      blockedFields = [];
+    }
+
+    queryValidator = queryValidator.rule;
+  }
+  allowedFields = allowedFields?.filter((key) => !blockedFields.includes(key));
+  if (blockedFields.length || allowedFields?.length) {
+    const keys = [...Object.keys(args.where || {}), ...Object.keys(args.data || {}), ...Object.keys(args.include || {}), ...Object.keys(args.select || {}),];
+    const fieldsBeingAccessed = Array.from(new Set(keys));
+    const queryHasIllegalFields = allowedFields ? 
+      !fieldsBeingAccessed.every((key) => allowedFields.includes(key)) : 
+      fieldsBeingAccessed.some((key) => blockedFields.includes(key));
+    if (queryHasIllegalFields) {
+      throw { message: 'Unauthorized', data: { model } };
+    }
+  }
+
+  const ruleWhereOrBool =
+    typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
   if (ruleWhereOrBool === false) throw { message: 'Unauthorized', data: { model } };
   if (typeof ruleWhereOrBool === 'object' && !acceptsWheres) {
     console.error(
       \`Rule error on nested model: "\${model}".  Cannot apply prisma where clauses to N-1 or 1-1 required relationships, only 1-N.
 More info: https://github.com/prisma/prisma/issues/15837#issuecomment-1290404982
 
-To fix this until issue is resolved: Change "\${model}" db rules to not rely on where clauses, OR for N-1 relationships, invert the include so the "\${model}" model is including the many table. (N-1 => 1-N)\`,
+To fix this until issue is resolved: Change "\${model}" db rules to not rely on where clauses, OR for N-1 relationships, invert the include so the "\${model}" model is including the many table. (N-1 => 1-N)\`
     );
     throw { message: 'Unauthorized', data: { model } };
     // don't accept wheres for create
@@ -109,7 +155,7 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
         }
       }),
     );
-  }
+  } 
 
   // Handle relational data mutations
   if (args.data && ['create', 'update'].includes(method)) {
@@ -122,13 +168,20 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
           // | set | update | updateMany | upsert | push (mongo only)
           return Object.keys(args.data[relationName]).map(async (mutationMethod) => {
             // disabled: connectOrCreate, set / disconnect (no wheres), upsert
-            if (!['connect', 'create', 'delete', 'deleteMany', 'update', 'updateMany'].includes(mutationMethod)) {
+            if (
+              !['connect', 'create', 'delete', 'deleteMany', 'update', 'updateMany'].includes(
+                mutationMethod
+              )
+            ) {
               console.error(
-               \`Nested \${mutationMethod} not yet supported in Bridg. Could violate database rules without further development.\`,
+                \`Nested \${mutationMethod} not yet supported in Bridg. Could violate database rules without further development.\`
               );
               throw Error();
             }
-            const method = mutationMethod === 'connect' ? 'update' : FUNC_METHOD_MAP[mutationMethod as PrismaFunction];
+            const method =
+              mutationMethod === 'connect'
+                ? 'update'
+                : FUNC_METHOD_MAP[mutationMethod as PrismaFunction];
             if (!method) throw Error();
             const mutationMethodValue = args.data[relationName][mutationMethod];
 
@@ -150,7 +203,11 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
               DATA: { data: mutationMethodValue },
             }[argType];
 
-            await applyRulesWheres(nestedArgs, { ...modelRelations[relationName], method }, context);
+            await applyRulesWheres(
+              nestedArgs,
+              { ...modelRelations[relationName], method },
+              context
+            );
 
             const computedArgs = {
               WHERE_AND_DATA: nestedArgs,
@@ -164,6 +221,43 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
         .flat(),
     );
   }
+};
+
+const stripBlockedFields = (data: {} | any[], rules: DbRules): any => {
+  if (!data || typeof data !== 'object') return data;
+
+  if (Array.isArray(data)) return data.map((item) => stripBlockedFields(item, rules));
+
+  // recursively walk through data, and delete any blocked fields, checking models via the $kind property
+  const deleteBlockedFieldsFromObj = (data: any) => {
+    const cleaned: any = {};
+    const model = data?.['$kind'];
+
+    // @ts-ignore
+    let blockedFields: string[] = rules[model]?.find?.blockedFields || rules[model]?.blockedFields || [];
+    // @ts-ignore
+    if(rules[model]?.find?.allowedFields && !rules[model]?.find?.blockedFields) blockedFields = [];
+    blockedFields.push('$kind');
+    // @ts-ignore
+    let allowedFields: string[] | undefined = rules[model]?.find?.allowedFields || rules[model]?.allowedFields;
+    allowedFields = allowedFields?.filter((key) => !blockedFields.includes(key));
+
+    Object.keys(data).forEach((key) => {
+      const legalKey = allowedFields ? allowedFields.includes(key) : !blockedFields.includes(key);
+      if (legalKey) {
+        const isNestedData =
+          typeof data[key] === 'object' &&
+          data[key] &&
+          ('$kind' in data[key] || Array.isArray(data[key]));
+
+        cleaned[key] = isNestedData ? stripBlockedFields(data[key], rules) : data[key];
+      }
+    });
+
+    return cleaned;
+  };
+
+  return deleteBlockedFieldsFromObj(data);
 };
 
 const funcOptions = [
@@ -182,9 +276,11 @@ const funcOptions = [
   'updateMany',
   'upsert',
 ] as const;
-type PrismaFunction = (typeof funcOptions)[number];
+type PrismaFunction = typeof funcOptions[number];
 
-const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' | 'delete' } = {
+const FUNC_METHOD_MAP: {
+  [key in PrismaFunction]: 'find' | 'create' | 'update' | 'delete';
+} = {
   aggregate: 'find',
   count: 'find',
   create: 'create',
@@ -200,29 +296,37 @@ const FUNC_METHOD_MAP: { [key in PrismaFunction]: 'find' | 'create' | 'update' |
   updateMany: 'update',
   upsert: 'update',
 };
+
+const withTypename = Prisma.defineExtension((client) => {
+  type ModelKey = Exclude<keyof typeof client, \`\${string}\` | symbol>;
+  type Result = { [K in ModelKey]: { $kind: { needs: {}; compute: () => K } } };
+
+  const result = {} as Result;
+  const modelKeys = Object.keys(client).filter((key) => !key.startsWith('$')) as ModelKey[];
+  modelKeys.forEach((k) => {
+    // @ts-ignore
+    result[k] = { $kind: { needs: {}, compute: () => k as any } };
+  });
+
+  return client.$extends({ result });
+});
 `;
 
-// Currently this is just a static file with no templating,
-// just generating it now bc its likely we'll need to template it eventually
 const generateHandlerFile = ({
-  modelNames,
-  schemaStr,
   outputLocation,
   prismaLocation = `@prisma/client`,
 }: {
-  modelNames: string[];
-  schemaStr: string;
   outputLocation: string;
   prismaLocation?: string;
 }) => {
-  const types = generateServerTypes(modelNames, schemaStr);
   const handlerPath = path.join(outputLocation, 'server', 'request-handler.ts');
   const prismaImportPath = prismaLocation
-    ? getRelativeImportPath(path.dirname(handlerPath), prismaLocation)
+    ? getRelativeImportPath(handlerPath, prismaLocation)
     : `@prisma/client`;
-  const fileContent = `import { Prisma, PrismaClient } from '${prismaImportPath}';${HANDLER_TEMPLATE}\n${types}`;
-
+  const fileContent = `import { Prisma, PrismaClient } from '${prismaImportPath}';${HANDLER_TEMPLATE}`;
   writeFileSafely(handlerPath, fileContent);
+
+  return fileContent;
 };
 
 export default generateHandlerFile;
