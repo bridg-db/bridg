@@ -20,6 +20,7 @@ export const handleRequest = async (
   const typedClient = withTypename(config.db);
 
   let { model, func, args } = requestBody;
+  const originalQuery = deepClone(args);
   if (!models.includes(model)) return { status: 401, data: { error: 'Unauthorized', model } };
   args = args || {};
   const { db, uid, rules } = config;
@@ -32,7 +33,6 @@ export const handleRequest = async (
         data: args.update,
       };
       await applyRulesWheres(updateArgs, { model, method: 'update' }, { uid, rules });
-      // @ts-ignore - catch err 'Record to update not found.'
       const updateData = await db[model].update(updateArgs).catch(() => {});
       if (updateData) {
         return { status: 200, data: updateData };
@@ -62,16 +62,24 @@ export const handleRequest = async (
   }
 
   let cleanedData;
+  let queryArgs;
   try {
-    // @ts-ignore
-    const data = await typedClient[model][func](args);
+    const beforeHook = rules[model]?.[method]?.before;
+    queryArgs = beforeHook ? beforeHook(uid, args, { method: func, originalQuery }) : args;
+
+    const data = await typedClient[model][func](queryArgs);
     cleanedData = stripBlockedFields(data, rules);
   } catch (error) {
     console.error(error);
     return { status: 500, message: 'Internal server error.' };
   }
 
-  return { status: 200, data: cleanedData };
+  const afterHook = rules[model]?.[method]?.after;
+  const resultData = afterHook
+    ? await afterHook(uid, cleanedData, { method: func, queryExecuted: queryArgs, originalQuery })
+    : cleanedData;
+
+  return { status: 200, data: resultData };
 };
 
 const applyRulesWheres = async (
@@ -89,18 +97,13 @@ const applyRulesWheres = async (
   const modelDefaultValidator = rules[model]?.default;
   // can't use "a || b || c", bc it would inadvertently skip "method:false" rules
   let queryValidator = modelMethodValidator ?? modelDefaultValidator ?? !!rules.default;
-  // @ts-ignore
   let blockedFields: string[] = rules[model]?.blockedFields || [];
-  // @ts-ignore
   let allowedFields: string[] = rules[model]?.allowedFields;
 
   if (typeof queryValidator === 'object' && 'rule' in queryValidator) {
-    // @ts-ignore
     blockedFields = queryValidator.blockedFields || blockedFields;
-    // @ts-ignore
     allowedFields = queryValidator.allowedFields || allowedFields;
-    // @ts-ignore
-    if(queryValidator.allowedFields && !queryValidator.blockedFields) {
+    if (queryValidator.allowedFields && !queryValidator.blockedFields) {
       // method.allowedFields overrides model.blockedFields
       blockedFields = [];
     }
@@ -109,11 +112,16 @@ const applyRulesWheres = async (
   }
   allowedFields = allowedFields?.filter((key) => !blockedFields.includes(key));
   if (blockedFields.length || allowedFields?.length) {
-    const keys = [...Object.keys(args.where || {}), ...Object.keys(args.data || {}), ...Object.keys(args.include || {}), ...Object.keys(args.select || {}),];
+    const keys = [
+      ...Object.keys(args.where || {}),
+      ...Object.keys(args.data || {}),
+      ...Object.keys(args.include || {}),
+      ...Object.keys(args.select || {}),
+    ];
     const fieldsBeingAccessed = Array.from(new Set(keys));
-    const queryHasIllegalFields = allowedFields ? 
-      !fieldsBeingAccessed.every((key) => allowedFields.includes(key)) : 
-      fieldsBeingAccessed.some((key) => blockedFields.includes(key));
+    const queryHasIllegalFields = allowedFields
+      ? !fieldsBeingAccessed.every((key) => allowedFields.includes(key))
+      : fieldsBeingAccessed.some((key) => blockedFields.includes(key));
     if (queryHasIllegalFields) {
       throw { message: 'Unauthorized', data: { model } };
     }
@@ -153,9 +161,9 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
         } else {
           return applyRulesWheres(relationInclude, { ...m, method: 'find' }, context);
         }
-      }),
+      })
     );
-  } 
+  }
 
   // Handle relational data mutations
   if (args.data && ['create', 'update'].includes(method)) {
@@ -218,7 +226,7 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
             args.data[relationName][mutationMethod] = computedArgs;
           });
         })
-        .flat(),
+        .flat()
     );
   }
 };
@@ -233,13 +241,12 @@ const stripBlockedFields = (data: {} | any[], rules: DbRules): any => {
     const cleaned: any = {};
     const model = data?.['$kind'];
 
-    // @ts-ignore
-    let blockedFields: string[] = rules[model]?.find?.blockedFields || rules[model]?.blockedFields || [];
-    // @ts-ignore
-    if(rules[model]?.find?.allowedFields && !rules[model]?.find?.blockedFields) blockedFields = [];
+    let blockedFields: string[] =
+      rules[model]?.find?.blockedFields || rules[model]?.blockedFields || [];
+    if (rules[model]?.find?.allowedFields && !rules[model]?.find?.blockedFields) blockedFields = [];
     blockedFields.push('$kind');
-    // @ts-ignore
-    let allowedFields: string[] | undefined = rules[model]?.find?.allowedFields || rules[model]?.allowedFields;
+    let allowedFields: string[] | undefined =
+      rules[model]?.find?.allowedFields || rules[model]?.allowedFields;
     allowedFields = allowedFields?.filter((key) => !blockedFields.includes(key));
 
     Object.keys(data).forEach((key) => {
@@ -304,12 +311,24 @@ const withTypename = Prisma.defineExtension((client) => {
   const result = {} as Result;
   const modelKeys = Object.keys(client).filter((key) => !key.startsWith('$')) as ModelKey[];
   modelKeys.forEach((k) => {
-    // @ts-ignore
     result[k] = { $kind: { needs: {}, compute: () => k as any } };
   });
 
   return client.$extends({ result });
 });
+
+// structuredClone unavailable in node<17.0.0
+const deepClone = (obj, seen = new WeakMap()) => {
+  if (obj === null || typeof obj !== 'object') return obj;
+  // Handle circular references
+  if (seen.has(obj)) return seen.get(obj);
+  if (obj instanceof Date) return new Date(obj);
+  if (obj instanceof RegExp) return new RegExp(obj.source, obj.flags);
+  const clone = Object.create(Object.getPrototypeOf(obj));
+  seen.set(obj, clone);
+  for (let key in obj) clone[key] = deepClone(obj[key], seen);
+  return clone;
+};
 `;
 
 const generateHandlerFile = ({
@@ -323,7 +342,7 @@ const generateHandlerFile = ({
   const prismaImportPath = prismaLocation
     ? getRelativeImportPath(handlerPath, prismaLocation)
     : `@prisma/client`;
-  const fileContent = `import { Prisma, PrismaClient } from '${prismaImportPath}';${HANDLER_TEMPLATE}`;
+  const fileContent = `// @ts-nocheck\nimport { Prisma, PrismaClient } from '${prismaImportPath}';${HANDLER_TEMPLATE}`;
   writeFileSafely(handlerPath, fileContent);
 
   return fileContent;

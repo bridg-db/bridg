@@ -7,6 +7,20 @@ export const generateServerTypes = (models: string[]) => {
   models = models || [];
 
   return `
+  type MethodTypes = 'find' | 'update' | 'create' | 'delete';
+  type FindMethods =
+    | 'findMany'
+    | 'findFirst'
+    | 'findFirstOrThrow'
+    | 'findUnique'
+    | 'findUniqueOrThrow'
+    | 'aggregate'
+    | 'count'
+    | 'groupBy';
+  type UpdateMethods = 'update' | 'updateMany' | 'upsert';
+  type CreateMethods = 'create' | 'createMany' | 'upsert';
+  type DeleteMethods = 'delete' | 'deleteMany';
+  
   type HideableProps<ModelWhereInput> = (keyof Omit<ModelWhereInput, 'AND' | 'OR' | 'NOT'>)[];
   type WhitelistOption<ModelWhereInput> =
     | { allowedFields: HideableProps<ModelWhereInput>; blockedFields?: never }
@@ -19,16 +33,25 @@ export const generateServerTypes = (models: string[]) => {
   declare type RuleOrCallback<RuleOptions, CreateInput> =
     | RuleOptions
     | RuleCallback<RuleOptions, CreateInput>;
-  declare type BridgRule<ModelWhereInput, RuleOptions, CreateInput = undefined> =
+  declare type BridgRule<Methods, ModelWhereInput, RuleOptions, CreateInput = undefined> =
     | RuleOrCallback<RuleOptions, CreateInput>
-    | ({ rule: RuleOrCallback<RuleOptions, CreateInput> } & WhitelistOption<ModelWhereInput>);
+    | ({
+        rule: RuleOrCallback<RuleOptions, CreateInput>;
+        // TODO: callback typing
+        before?: (uid: string, query: any, ctx: { method: Methods; originalQuery: any }) => any;
+        after?: (
+          uid: string,
+          data: any,
+          ctx: { method: Methods; queryExecuted: any; originalQuery: any }
+        ) => any;
+      } & WhitelistOption<ModelWhereInput>);
   declare type ModelRules<WhereInput, CreateInput> = Partial<
     {
-      find: BridgRule<WhereInput, boolean | WhereInput>;
-      update: BridgRule<WhereInput, boolean | WhereInput, CreateInput>;
-      create: BridgRule<WhereInput, boolean, CreateInput>;
-      delete: BridgRule<WhereInput, boolean | WhereInput>;
-      default: BridgRule<WhereInput, boolean, CreateInput>;
+      find: BridgRule<FindMethods, WhereInput, boolean | WhereInput>;
+      update: BridgRule<UpdateMethods, WhereInput, boolean | WhereInput, CreateInput>;
+      create: BridgRule<CreateMethods, WhereInput, boolean, CreateInput>;
+      delete: BridgRule<DeleteMethods, WhereInput, boolean | WhereInput>;
+      default: BridgRule<undefined, WhereInput, boolean, CreateInput>;
     } & WhitelistOption<WhereInput>
   >;
 
