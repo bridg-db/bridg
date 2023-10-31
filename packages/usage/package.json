@@ -23,6 +23,7 @@
     "typescript": "4.5.2"
   },
   "dependencies": {
-    "@prisma/client": "5.5.2"
+    "@prisma/client": "5.5.2",
+    "@prisma/extension-pulse": "^0.1.8"
   }
 }

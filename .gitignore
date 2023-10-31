@@ -12,3 +12,4 @@ pnpm-debug.log
 /packages/usage/__tests__/generated
 /packages/usage/prisma/prisma
 /packages/usage/prisma/bridg
+/packages/usage/temp
