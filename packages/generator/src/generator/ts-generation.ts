@@ -66,7 +66,7 @@ export const generateRulesFile = (options: GeneratorOptions, outputRoot: string)
   const rulesLocation = path.join(options.schemaPath, '..', 'rules.ts');
   const modelNames = options.dmmf.datamodel.models.map((m) => m.name);
   if (!modelNames.length || existsSync(rulesLocation)) return;
-  const importPath = getRelativeImportPath(rulesLocation, `${outputRoot}/server/request-handler`);
+  const importPath = getRelativeImportPath(rulesLocation, `${outputRoot}/request-handler`);
   const rulesFileContent = `import { DbRules } from '${importPath}';
 
 // https://github.com/joeroddy/bridg#database-rules

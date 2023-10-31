@@ -5,8 +5,9 @@ build
 pnpm-debug.log
 .env*
 .DS_Store
+dev.db
 
-# some random testing crap
+# random testing crap
 /packages/usage/output
 /packages/usage/custom-output
 /packages/usage/__tests__/generated

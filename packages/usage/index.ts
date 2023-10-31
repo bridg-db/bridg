@@ -1,17 +1,24 @@
-import { PrismaClient } from '@prisma/client';
+import { withPulse } from '@prisma/extension-pulse';
+import { PrismaClient } from './prisma/prisma';
 
-// import prisma from './__tests__/utils/prisma';
+const PULSE_API_KEY = process.env.PULSE_API_KEY as string;
+const prisma = new PrismaClient().$extends(withPulse({ apiKey: PULSE_API_KEY }));
 
-const prisma = new PrismaClient();
+async function main() {
+  const prismaUsers = await prisma.user.findMany({ where: {} });
+  console.log('standard user query', prismaUsers);
 
-const go = async () => {
-  const u = await prisma.user.findFirst();
-  console.log('u', u);
-};
-
-go()
-  .then()
-  .catch(console.error)
-  .finally(async () => {
-    prisma.$disconnect();
+  const subscription = await prisma.user.subscribe({
+    update: { after: {} },
+    // create: { after: {} },
+    // delete: { before: {} },
   });
+
+  if (subscription instanceof Error) throw subscription;
+
+  for await (const event of subscription) {
+    console.log('User update event', event);
+  }
+}
+
+main().finally(() => prisma.$disconnect());
