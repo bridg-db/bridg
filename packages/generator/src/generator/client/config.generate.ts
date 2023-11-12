@@ -19,6 +19,7 @@ const bridgConfig = {
     debug: ${debug},
     output: ${output ? `'${output}'` : `undefined`},
     api: ${api ? `'${api}'` : `undefined`},
+    apiIsWebsocket: ${api?.startsWith('ws:') || api?.startsWith('wss:')},
 } as const;
   
 export default bridgConfig;

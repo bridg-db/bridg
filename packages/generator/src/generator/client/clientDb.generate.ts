@@ -8,7 +8,13 @@ const generateExports = (models: string[]) => {
     ``
   );
 
-  return `\nconst bridg = {${exports}\n};\nexport default bridg;`;
+  return `
+type WebsocketFunctions = { $sendWebsocketMessage: (data: any) => Promise<any> };
+const wsTypedObj = (
+  config.apiIsWebsocket ? { $sendWebsocketMessage: (data: any) => exec(data) } : {}
+) as typeof config.apiIsWebsocket extends true ? WebsocketFunctions : {};
+
+const bridg = {${exports}\n...wsTypedObj,\n};\nexport default bridg;`;
 };
 
 const getHead = () => `
@@ -17,11 +23,10 @@ import { type ModelName } from './server';
 import { type PulseSubscribe } from './server/request-handler';
 
 export const exec = (
-  { model, args, func = 'findMany' }: { model: string; args?: {}; func: string },
+  request: { model: string; args?: {}; func: string },
   subscriptionCallback?: (e: any) => void
 ) => {
-  const request = { model, args, func };
-  if (!config.api.startsWith('wss:') && !config.api.startsWith('ws:')) {
+  if (!config.apiIsWebsocket) {
     return fetch(config.api, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -33,7 +38,7 @@ export const exec = (
       return json;
     });
   } else {
-    return func === 'subscribe' && subscriptionCallback
+    return request.func === 'subscribe' && subscriptionCallback
       ? websocketListener(request, subscriptionCallback)
       : websocketPromiseReq(request);
   }
