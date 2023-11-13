@@ -72,6 +72,9 @@ importers:
       '@prisma/client':
         specifier: 5.5.2
         version: 5.5.2(prisma@5.5.2)
+      '@prisma/extension-pulse':
+        specifier: ^0.1.8
+        version: 0.1.8(@prisma/client@5.5.2)
     devDependencies:
       '@jest/globals':
         specifier: ^29.6.2
@@ -102,6 +105,8 @@ importers:
         version: 4.5.2
 
   packages/usage/__tests__/generated/prisma: {}
+
+  packages/usage/__tests__/generated/prisma-pulse: {}
 
   packages/usage/prisma/prisma: {}
 
@@ -1144,6 +1149,18 @@ packages:
   /@prisma/engines@5.5.2:
     resolution: {integrity: sha512-Be5hoNF8k+lkB3uEMiCHbhbfF6aj1GnrTBnn5iYFT7GEr3TsOEp1soviEcBR0tYCgHbxjcIxJMhdbvxALJhAqg==}
     requiresBuild: true
+
+  /@prisma/extension-pulse@0.1.8(@prisma/client@5.5.2):
+    resolution: {integrity: sha512-oWOldt1uJSuAVOws1T8QP13n8qH5agaIdcMfHK44/+VRJXAu/cKZt9y7iNx1K8FtgezCaszRXlLgkE5Yf4VDmQ==}
+    peerDependencies:
+      '@prisma/client': '>=4.16.1'
+    dependencies:
+      '@prisma/client': 5.5.2(prisma@5.5.2)
+      ws: 8.14.2
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
 
   /@prisma/generator-helper@5.1.0:
     resolution: {integrity: sha512-N/6nE76YFByywR5tTScevPJGfbftdRbANPlTsL5KvpJWnnLPBvNZCtGpto2Ax4Ot15zLA0/olql5609X2zzXcg==}
@@ -5098,6 +5115,19 @@ packages:
       utf-8-validate:
         optional: true
     dev: true
+
+  /ws@8.14.2:
+    resolution: {integrity: sha512-wEBG1ftX4jcglPxgFCMJmZ2PLtSbJ2Peg6TmpJFTbe9GZYOQCDPdMYu/Tm0/bGZkw8paZnJY45J4K2PZrLYq8g==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+    dev: false
 
   /xml-name-validator@3.0.0:
     resolution: {integrity: sha512-A5CUptxDsvxKJEU3yO6DuWBSJz/qizqzJKOMIfUJHETbBw/sFaDxgd6fxm1ewUaM0jZ444Fc5vC5ROYurg/4Pw==}

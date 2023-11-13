@@ -191,7 +191,7 @@ const userSelect = () => bridg.user.findFirst({ select: { email: true, name: tru
 const nestedUserSelect = () =>
   bridg.user.findFirst({ include: { blogs: { select: { body: true, id: true } } } });
 
-it('Blocked property prevents/allows selecting fields', async () => {
+it('Blocked property prevents/allows selecting fields, protects fields on inclusions/relations', async () => {
   setRules({ user: { find: { rule: true, blockedFields: ['email'] } } });
   await queryFails(userSelect());
   setRules({ user: { find: { rule: true, blockedFields: ['createdAt'] } } });
@@ -632,4 +632,45 @@ it('Model.allowedFields gets overridden by method.blocked', async () => {
     },
   });
   await runTest();
+});
+
+it('relational updates dont get around blockedFields', async () => {
+  // write security rules blocking updates on blog.title,
+  // attempt to relationally update via user,
+  // should still fail
+  const relationalUpdate = () =>
+    bridg.user.update({
+      where: { id: testUser.id },
+      data: {
+        blogs: {
+          updateMany: {
+            where: { id: testBlog1.id },
+            data: {
+              title: 'shouldntWork',
+            },
+          },
+        },
+      },
+    });
+
+  setRules({
+    user: { update: true, find: true },
+    blog: {
+      update: {
+        rule: true,
+        blockedFields: ['title'],
+      },
+    },
+  });
+  await queryFails(relationalUpdate());
+  setRules({
+    user: { update: true, find: true },
+    blog: {
+      update: {
+        rule: true,
+        blockedFields: [],
+      },
+    },
+  });
+  await querySucceeds(relationalUpdate());
 });

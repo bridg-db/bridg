@@ -10,8 +10,9 @@ import {
 } from '../utils/file.util';
 import { uncapitalize } from '../utils/string.util';
 import { generateClientDbFile } from './client/clientDb.generate';
+import { BridgConfigOptions, generateBridgConfigFile } from './client/config.generate';
 import { generateModelRelationsFile } from './server/modelRelations.generate';
-import generateHandler from './server/requestHandler.generate';
+import { generateHandlerFile } from './server/requestHandler.generate';
 import { generateServerIndexTypesFile } from './server/serverTypes.generate';
 
 export const MODEL_REGEX = /(?<=model\s)\w+(?=\s?{)/gis;
@@ -23,23 +24,23 @@ export const generateBridgTsFiles = (options: GeneratorOptions, outputLocation: 
     schemaStr: readFileAsString(options.schemaPath),
     modelNames: options.dmmf.datamodel.models.map((m) => m.name),
     outputLocation,
-    apiLocation: (options.generator.config.api as string) || '/api/bridg',
     prismaLocation:
       options.otherGenerators.find((g) => g.name === 'client')?.output?.value || undefined,
+    bridgConfig: options.generator.config as BridgConfigOptions,
   });
 
 export const generateFiles = ({
   schemaStr,
   modelNames,
   outputLocation,
-  apiLocation,
   prismaLocation,
+  bridgConfig = {},
 }: {
   schemaStr: string;
   modelNames: string[];
   outputLocation: string;
-  apiLocation: string;
   prismaLocation?: string;
+  bridgConfig?: BridgConfigOptions;
 }) => {
   if (!schemaStr) throw new Error(`Schema not provided`);
   //   if (!schemaStr.match(/.+["']extendedWhereUnique["'].+/g)) {
@@ -53,18 +54,19 @@ export const generateFiles = ({
 
   schemaStr = strip(schemaStr);
 
-  generateClientDbFile({ modelNames, outputLocation, apiLocation, prismaLocation });
+  generateClientDbFile({ modelNames, outputLocation, prismaLocation });
   // server
-  generateHandler({ outputLocation, prismaLocation });
+  generateHandlerFile({ bridgConfig, outputLocation, prismaLocation });
   generateModelRelationsFile({ modelNames, schemaStr, outputLocation });
   generateServerIndexTypesFile({ modelNames, outputLocation, prismaLocation });
+  generateBridgConfigFile({ bridgConfig, outputLocation });
 };
 
 export const generateRulesFile = (options: GeneratorOptions, outputRoot: string) => {
   const rulesLocation = path.join(options.schemaPath, '..', 'rules.ts');
   const modelNames = options.dmmf.datamodel.models.map((m) => m.name);
   if (!modelNames.length || existsSync(rulesLocation)) return;
-  const importPath = getRelativeImportPath(rulesLocation, `${outputRoot}/server/request-handler`);
+  const importPath = getRelativeImportPath(rulesLocation, `${outputRoot}/server`);
   const rulesFileContent = `import { DbRules } from '${importPath}';
 
 // https://github.com/joeroddy/bridg#database-rules

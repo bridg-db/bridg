@@ -1,4 +1,5 @@
 import path from 'path';
+import { BridgConfigOptions } from 'src/generator/client/config.generate';
 import { getRelativeImportPath, writeFileSafely } from '../../utils/file.util';
 
 const HANDLER_TEMPLATE = `
@@ -15,17 +16,22 @@ export const handleRequest = async (
     db: PrismaClient;
     rules: DbRules;
     uid?: string;
+    onSubscriptionCreated?: (sub: any) => void;
+    onSubscriptionEvent?: (args: any) => void;
   }
 ) => {
   const typedClient = withTypename(config.db);
 
+  const { db, uid, rules, onSubscriptionEvent, onSubscriptionCreated } = config;
   let { model, func, args } = requestBody;
-  const originalQuery = deepClone(args);
-  if (!models.includes(model)) return { status: 401, data: { error: 'Unauthorized', model } };
   args = args || {};
-  const { db, uid, rules } = config;
-  let method = FUNC_METHOD_MAP[func];
+  if (!models.includes(model)) return { status: 401, data: { error: 'Unauthorized', model } };
+  if (func === 'subscribe' && !onSubscriptionEvent)
+    return { status: 500, data: { error: 'Subscribe callback not supplied', model } };
 
+  const originalQuery = deepClone(args);
+
+  let method = FUNC_METHOD_MAP[func];
   try {
     if (func === 'upsert') {
       const updateArgs = {
@@ -43,7 +49,6 @@ export const handleRequest = async (
         method = 'create';
       }
     }
-
     await applyRulesWheres(args, { model, method }, { uid, rules });
   } catch (err: any) {
     if (err?.message === 'Unauthorized') {
@@ -63,12 +68,26 @@ export const handleRequest = async (
 
   let cleanedData;
   let queryArgs;
+  let data;
   try {
     const beforeHook = rules[model]?.[method]?.before;
     queryArgs = beforeHook ? beforeHook(uid, args, { method: func, originalQuery }) : args;
 
-    const data = await typedClient[model][func](queryArgs);
-    cleanedData = stripBlockedFields(data, rules);
+    if (func === 'subscribe') {
+      const subscribeArgs = buildSubscribeArgs(queryArgs);
+      const subscription = await db[model][func](subscribeArgs);
+      onSubscriptionCreated?.(subscription);
+      if (subscription instanceof Error) onSubscriptionEvent({ error: subscription });
+      for await (const event of subscription) {
+        const dataKey = 'before' in event ? 'before' : 'after';
+        const cleanedData = stripBlockedFields({ $kind: model, ...event[dataKey] }, rules);
+        onSubscriptionEvent({ ...event, [dataKey]: cleanedData });
+      }
+      return;
+    } else {
+      data = await typedClient[model][func](queryArgs);
+      cleanedData = stripBlockedFields(data, rules);
+    }
   } catch (error) {
     console.error(error);
     return { status: 500, message: 'Internal server error.' };
@@ -267,6 +286,30 @@ const stripBlockedFields = (data: {} | any[], rules: DbRules): any => {
   return deleteBlockedFieldsFromObj(data);
 };
 
+const asArray = (item: Array | any) => (Array.isArray(item) ? item : [item]);
+const buildSubscribeArgs = (queryArgs: {
+  where: {};
+  update?: { after: {} };
+  create?: { after: {} };
+  delete?: { before: {} };
+}) => {
+  const applyRuleToAll = !queryArgs.update && !queryArgs.create && !queryArgs.delete;
+  const where = queryArgs.where;
+  const subscribeArgs = {};
+  ['create', 'update', 'delete'].forEach((method) => {
+    const key = method === 'delete' ? 'before' : 'after';
+    let userQuery = queryArgs[method]?.[key] || queryArgs[method];
+    if (!userQuery && !applyRuleToAll) return;
+    const queryWithRules = {
+      ...userQuery,
+      AND: [...(where?.AND || []), ...asArray(userQuery?.AND || [])],
+    };
+
+    subscribeArgs[method] = { [key]: queryWithRules };
+  });
+  return subscribeArgs;
+};
+
 const funcOptions = [
   'aggregate',
   'count',
@@ -282,6 +325,8 @@ const funcOptions = [
   'update',
   'updateMany',
   'upsert',
+  // pulse only
+  'subscribe',
 ] as const;
 type PrismaFunction = typeof funcOptions[number];
 
@@ -302,6 +347,8 @@ const FUNC_METHOD_MAP: {
   update: 'update',
   updateMany: 'update',
   upsert: 'update',
+  // pulse only
+  subscribe: 'find',
 };
 
 const withTypename = Prisma.defineExtension((client) => {
@@ -331,21 +378,37 @@ const deepClone = (obj, seen = new WeakMap()) => {
 };
 `;
 
-const generateHandlerFile = ({
+const getPulseExports = (withPulse: boolean) =>
+  withPulse
+    ? `
+const withPulseClient = (client: PrismaClient, apiKey) => client.$extends(withPulse({ apiKey }));
+export type PulseSubscribe<M extends ModelName> = ReturnType<
+  typeof withPulseClient
+>[M]['subscribe'];`
+    : `export type PulseSubscribe<T> = undefined;`;
+
+export const generateHandlerFile = ({
+  bridgConfig,
   outputLocation,
   prismaLocation = `@prisma/client`,
 }: {
+  bridgConfig: BridgConfigOptions;
   outputLocation: string;
   prismaLocation?: string;
 }) => {
+  const withPulse = !!bridgConfig.pulse;
   const handlerPath = path.join(outputLocation, 'server', 'request-handler.ts');
   const prismaImportPath = prismaLocation
     ? getRelativeImportPath(handlerPath, prismaLocation)
     : `@prisma/client`;
-  const fileContent = `// @ts-nocheck\nimport { Prisma, PrismaClient } from '${prismaImportPath}';${HANDLER_TEMPLATE}`;
+
+  const fileContent = `// @ts-nocheck
+  import { Prisma, PrismaClient } from '${prismaImportPath}';
+  ${withPulse ? `import { withPulse } from '@prisma/extension-pulse';` : ''}
+  ${HANDLER_TEMPLATE}
+  ${getPulseExports(withPulse)}`;
+
   writeFileSafely(handlerPath, fileContent);
 
   return fileContent;
 };
-
-export default generateHandlerFile;
