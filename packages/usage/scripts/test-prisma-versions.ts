@@ -31,13 +31,13 @@ export const prepareEnv = async (prismaVersion: string) => {
   execSyncNoOut(`VERSION=${prismaVersion} npm run prisma:install`);
   console.log('client installed');
 
-  execSyncNoOut(`npm run test:prepare`);
+  execSyncNoOut(`npm run test:prepare-base`);
   console.log('schema pushed, client generated');
 
   console.log('starting tests...');
 
   try {
-    execSyncNoOut(`npm run test`);
+    execSyncNoOut(`npm run test:base`);
   } catch (err) {
     console.log('Tests failed.');
     failed.push(prismaVersion);
