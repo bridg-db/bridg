@@ -293,15 +293,16 @@ const buildSubscribeArgs = (queryArgs: {
   create?: { after: {} };
   delete?: { before: {} };
 }) => {
+  const applyRuleToAll = !queryArgs.update && !queryArgs.create && !queryArgs.delete;
   const where = queryArgs.where;
   const subscribeArgs = {};
   ['create', 'update', 'delete'].forEach((method) => {
     const key = method === 'delete' ? 'before' : 'after';
-    let userQuery = queryArgs[method]?.[key];
-    if (!userQuery) return;
+    let userQuery = queryArgs[method]?.[key] || queryArgs[method];
+    if (!userQuery && !applyRuleToAll) return;
     const queryWithRules = {
       ...userQuery,
-      AND: [...(where?.AND || []), ...asArray(userQuery.AND || [])],
+      AND: [...(where?.AND || []), ...asArray(userQuery?.AND || [])],
     };
 
     subscribeArgs[method] = { [key]: queryWithRules };

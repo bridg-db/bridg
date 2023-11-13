@@ -106,6 +106,8 @@ importers:
 
   packages/usage/__tests__/generated/prisma: {}
 
+  packages/usage/__tests__/generated/prisma-pulse: {}
+
   packages/usage/prisma/prisma: {}
 
 packages:
