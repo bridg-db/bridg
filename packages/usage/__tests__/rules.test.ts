@@ -1,64 +1,40 @@
-import { afterAll, beforeEach, expect, it } from '@jest/globals';
+import { beforeEach, expect, it } from '@jest/globals';
 import { mockFetch } from './__mocks__/fetch.mock';
 import bridg from './generated/bridg';
 import { Blog, Prisma, User } from './generated/prisma';
-import prisma, { resetDbData } from './utils/prisma';
-import { setRules } from './utils/test-rules';
+import prisma, {
+  TEST_TITLE,
+  TEST_TITLE_2,
+  deleteDbData,
+  seedDbData,
+} from './utils/prisma.test-util';
+import { queryFails, querySucceeds } from './utils/query.test-util';
+import { setRules } from './utils/rules.test-util';
 
 global.fetch = mockFetch;
 
-const TEST_TITLE = 'TEST_BLOG';
-const TEST_TITLE_2 = 'TEST_BLOG_2';
 let testBlog1: Blog;
 let testBlog2: Blog;
 let testUser: User;
 
+const resetTestData = () =>
+  seedDbData({
+    userData: { email: 'johndoe@gmail.com' },
+    blogData: { comments: { create: { body: 'test-comment' } } },
+  }).then((r) => {
+    testUser = r.testUser;
+    testBlog1 = r.testBlog1;
+    testBlog2 = r.testBlog2;
+  });
+
 beforeEach(async () => {
   setRules({});
-  await resetDbData();
-  testUser = await prisma.user.create({ data: { email: 'johndoe@gmail.com' } });
-
-  const blogCreate = {
-    userId: testUser.id,
-    comments: { create: { body: 'test-comment' } },
-  };
-  testBlog1 = await prisma.blog.create({
-    data: { title: TEST_TITLE, ...blogCreate },
-  });
-  testBlog2 = await prisma.blog.create({
-    data: { title: TEST_TITLE_2, ...blogCreate },
-  });
-});
-
-afterAll(async () => {
-  setRules({});
+  await deleteDbData();
+  await resetTestData();
 });
 
 const fetchBlog1 = () => prisma.blog.findFirst({ where: { id: testBlog1.id } });
 const fetchBlog2 = () => prisma.blog.findFirst({ where: { id: testBlog2.id } });
-
-const queryFails = async (query: Promise<any>) => {
-  const data = await query.catch((err) => {
-    expect(err).toBeTruthy();
-  });
-  expect(data).toBeUndefined();
-};
-
-const querySucceeds = async (query: Promise<any>, resultCount = 1) => {
-  const data = await query;
-
-  if (Array.isArray(data)) {
-    expect(data.length).toBe(resultCount);
-  } else if (data?.count !== undefined) {
-    expect(data.count).toBe(resultCount);
-  } else {
-    resultCount === 0 && expect(data).toBeNull();
-    resultCount === 1 && expect(data).toBeTruthy();
-    if (resultCount > 1) throw Error(`Expected array, but received: ${data}`);
-  }
-
-  return data;
-};
 
 it('Find rules work with true/false', async () => {
   // FAIL

@@ -1,69 +1,29 @@
-import { afterAll, beforeEach, expect, it } from '@jest/globals';
+import { beforeEach, expect, it } from '@jest/globals';
 import { mockFetch } from './__mocks__/fetch.mock';
 import bridg from './generated/bridg';
 import { Blog, User } from './generated/prisma';
-import prisma, { resetDbData } from './utils/prisma';
-import { setRules } from './utils/test-rules';
+import { deleteDbData, seedDbData } from './utils/prisma.test-util';
+import { queryFails, querySucceeds } from './utils/query.test-util';
+import { setRules } from './utils/rules.test-util';
 
 global.fetch = mockFetch;
 
-const TEST_TITLE = 'TEST_BLOG';
-const TEST_TITLE_2 = 'TEST_BLOG_2';
+let testUser: User;
 let testBlog1: Blog;
 let testBlog2: Blog;
-let testUser: User;
 
-const createFakeData = async () => {
-  testUser = await prisma.user.create({ data: { email: 'johndoe@gmail.com', name: 'John Doe' } });
-
-  const blogCreate = {
-    userId: testUser.id,
-    body: 'hello world test blog body',
-    comments: { create: { body: 'test-comment' } },
-  };
-  testBlog1 = await prisma.blog.create({
-    data: { title: TEST_TITLE, ...blogCreate },
+const resetTestData = () =>
+  seedDbData().then((r) => {
+    testUser = r.testUser;
+    testBlog1 = r.testBlog1;
+    testBlog2 = r.testBlog2;
   });
-  testBlog2 = await prisma.blog.create({
-    data: { title: TEST_TITLE_2, ...blogCreate },
-  });
-};
 
 beforeEach(async () => {
   setRules({});
-  await resetDbData();
-  await createFakeData();
+  await deleteDbData();
+  await resetTestData();
 });
-
-afterAll(async () => {
-  setRules({});
-});
-
-const fetchBlog1 = () => prisma.blog.findFirst({ where: { id: testBlog1.id } });
-const fetchBlog2 = () => prisma.blog.findFirst({ where: { id: testBlog2.id } });
-
-const queryFails = async (query: Promise<any>) => {
-  const data = await query.catch((err) => {
-    expect(err).toBeTruthy();
-  });
-  expect(data).toBeUndefined();
-};
-
-const querySucceeds = async (query: Promise<any>, resultCount = 1) => {
-  const data = await query;
-
-  if (Array.isArray(data)) {
-    expect(data.length).toBe(resultCount);
-  } else if (data?.count !== undefined) {
-    expect(data.count).toBe(resultCount);
-  } else {
-    resultCount === 0 && expect(data).toBeNull();
-    resultCount === 1 && expect(data).toBeTruthy();
-    if (resultCount > 1) throw Error(`Expected array, but received: ${data}`);
-  }
-
-  return data;
-};
 
 const blogFields = [
   'id',
@@ -477,8 +437,8 @@ it('Sensitive fields cannot be used for creating data', async () => {
     },
   });
   await createTests();
-  await resetDbData();
-  await createFakeData();
+  await deleteDbData();
+  await resetTestData();
 
   setRules({
     blog: {
@@ -498,15 +458,15 @@ it('Cannot delete data by querying sensitive fields', async () => {
     await queryFails(bridg.blog.delete({ where: { id: testBlog1.id } }));
     await querySucceeds(bridg.blog.deleteMany({ where: { title: '' } }), 0);
     await querySucceeds(bridg.blog.deleteMany({ where: { title: testBlog1.title } }), 1);
-    await resetDbData();
-    await createFakeData();
+    await deleteDbData();
+    await resetTestData();
     await querySucceeds(bridg.blog.deleteMany({ where: {} }), 2);
   };
 
   setRules({ blog: { delete: { rule: true, blockedFields: ['id'] } } });
   await deleteViaSensitiveFields();
-  await resetDbData();
-  await createFakeData();
+  await deleteDbData();
+  await resetTestData();
   setRules({
     blog: { delete: { rule: true, allowedFields: getAllowedEquivalentForBlogFields(['id']) } },
   });
@@ -590,7 +550,7 @@ it('Sensitive props falls back to model level if no method level available', asy
     },
   });
   await testMultilevelCreate();
-  await resetDbData();
+  await deleteDbData();
   setRules({
     user: {
       default: true,
