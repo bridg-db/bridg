@@ -1,6 +1,4 @@
-// TODO: 5.1.0 fails because model.count() doesn't work for some reason, investigate
-//
-// RUN WITH NPM NOT YARN, WON'T WORK WITH YARN
+// RUN WITH NPM, NOT YARN, WILL FAIL WITH YARN
 // ❌ yarn test:prisma-versions
 // ✅ npm run test:prisma-versions
 import { execSync } from 'child_process';
@@ -24,7 +22,7 @@ const PRISMA_VERSIONS = getRecentPrismaVersions();
 const success: string[] = [];
 const failed: string[] = [];
 
-export const prepareEnv = async (prismaVersion: string) => {
+const prepareEnv = (prismaVersion: string) => {
   console.log('\nSTARTING TESTS FOR PRISMA VERSION:', prismaVersion);
   console.log('----------------------------------------');
 
@@ -33,7 +31,9 @@ export const prepareEnv = async (prismaVersion: string) => {
 
   execSyncNoOut(`npm run test:prepare-base`);
   console.log('schema pushed, client generated');
+};
 
+const runTests = (prismaVersion: string) => {
   console.log('starting tests...');
 
   try {
@@ -49,8 +49,13 @@ export const prepareEnv = async (prismaVersion: string) => {
 };
 
 PRISMA_VERSIONS.forEach((version) => {
+  // 5.1.0 fails because model.count() was bugged, count tests fail. skip.
+  // https://github.com/prisma/prisma/issues/20499
+  if (version === '5.1.0') return;
+
   try {
     prepareEnv(version);
+    runTests(version);
   } catch {
     console.log('Tests failed.');
     failed.push(version);
