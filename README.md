@@ -2,16 +2,14 @@
 
 [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/zHCvaJS4P4)
 
-Bridg let's you query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
-
-This library is still a work in progress, and there are still lots of warts. If you're able to try it out and run into issues, please don't hesitate to open an issue, or ask questions in the Discord.
+Bridg let's you <u>securely</u> query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
 
 ```tsx
 <input
   placeholder="Search for blogs.."
   onChange={async (e) => {
     const query = e.target.value;
-    const blogs = await db.blog.findMany({
+    const blogs = await bridg.blog.findMany({
       where: { title: { contains: query } },
     });
     setSearchResults(blogs);
@@ -27,6 +25,7 @@ This library is still a work in progress, and there are still lots of warts. If 
 
 [Getting Started](#getting-started)  
 [Querying Your Database](#querying-your-database)  
+[Realtime Data](#realtime-data)  
 [Protecting Your Data](#database-rules)
 
 ### Supported Databases
@@ -137,7 +136,7 @@ Executing queries works like so:
 ```ts
 import db from 'bridg';
 
-const data = await db.tableName.crudMethod(args);
+const data = await bridg.tableName.crudMethod(args);
 ```
 
 The following are simplified examples. If you're thinking _"I wonder if I could do X with this.."_, the answer is probably yes. You will just need to search for "pagination with Prisma", or for whatever you're trying to achieve.
@@ -146,7 +145,7 @@ The following are simplified examples. If you're thinking _"I wonder if I could 
 
 ```ts
 // create a single db record
-const createdUser = await db.user.create({
+const createdUser = await bridg.user.create({
   data: {
     name: 'John',
     email: 'johndoe@gmail.com',
@@ -154,7 +153,7 @@ const createdUser = await db.user.create({
 });
 
 // create multiple records at once:
-const creationCount = await db.user.createMany({
+const creationCount = await bridg.user.createMany({
   data: [
     { name: 'John', email: 'johndoe@gmail.com' },
     { name: 'Sam', email: 'sam.johnson@outlook.com' },
@@ -163,7 +162,7 @@ const creationCount = await db.user.createMany({
 });
 
 // create a user, and create a relational blog for them
-const createdUser = await db.user.create({
+const createdUser = await bridg.user.create({
   data: {
     name: 'John',
     email: 'johndoe@gmail.com',
@@ -181,36 +180,36 @@ const createdUser = await db.user.create({
 
 ```ts
 // all records within a table:
-const users = await db.user.findMany();
+const users = await bridg.user.findMany();
 
 // all records that satisfy a where clause:
-const users = await db.user.findMany({ where: { profileIsPublic: true } });
+const users = await bridg.user.findMany({ where: { profileIsPublic: true } });
 
 // get the first record that satisfies a where clause:
-const user = await db.user.findFirst({ where: { email: 'johndoe@gmail.com' } });
+const user = await bridg.user.findFirst({ where: { email: 'johndoe@gmail.com' } });
 
 // enforce that only one record could ever exist (must pass a unique column id):
-const user = await db.user.findUnique({ where: { id: 'some-id' } });
+const user = await bridg.user.findUnique({ where: { id: 'some-id' } });
 
 // do the same thing, but throw an error if the data is missing
-const user = await db.user.findUniqueOrThrow({ where: { id: 'some-id' } });
+const user = await bridg.user.findUniqueOrThrow({ where: { id: 'some-id' } });
 ```
 
 ### Including Relational Data:
 
 ```ts
 // all users and a list of all their blogs:
-const users = await db.user.findMany({ include: { blogs: true } });
+const users = await bridg.user.findMany({ include: { blogs: true } });
 
 // where clauses can be applied to relational data:
-const users = await db.user.findMany({
+const users = await bridg.user.findMany({
   include: {
     blogs: { where: { published: true } },
   },
 });
 
 // nest all blogs, and all comments on blogs. its just relations all the way down.
-const users = await db.user.findMany({
+const users = await bridg.user.findMany({
   include: {
     blogs: {
       include: { comments: true },
@@ -225,13 +224,13 @@ For more details on advanced querying, filtering and sorting, [check out this pa
 
 ```ts
 // update a single record
-const updatedData = await db.blog.update({
+const updatedData = await bridg.blog.update({
   where: { id: 'some-id' }, // must use a unique db key to use .update
   data: { title: 'New Blog title' },
 });
 
 // update many records
-const updateCount = await db.blog.updateMany({
+const updateCount = await bridg.blog.updateMany({
   where: { authorId: userId },
   data: { isPublished: true },
 });
@@ -241,11 +240,34 @@ const updateCount = await db.blog.updateMany({
 
 ```ts
 // delete a single record.  must use a unique db key to use .delete
-const deletedBlog = await db.blog.delete({ where: { id: 'some-id' } });
+const deletedBlog = await bridg.blog.delete({ where: { id: 'some-id' } });
 
 // delete many records
-const deleteCount = await db.blog.deleteMany({ where: { isPublished: false } });
+const deleteCount = await bridg.blog.deleteMany({ where: { isPublished: false } });
 ```
+
+## Realtime Data
+
+Bridg supports listening to realtime Database events via [Prisma's Pulse extension](https://www.prisma.io/data-platform/pulse).
+
+```ts
+const subscription = await bridg.message.subscribe({
+  create: {
+    after: { conversationId: 'convo-id' },
+  },
+});
+
+for await (const event of subscription) {
+  const newMsg = event.after;
+  setMessages([...messages, newMsg]);
+}
+```
+
+[Example chat app with realtime events](https://github.com/JoeRoddy/pulse-chat-demo/)
+
+Setting this up at the moment is somewhat cumbersome. Making this easier is a big priority.
+
+For setup instructions, see [this comment](https://github.com/JoeRoddy/bridg/pull/57#issue-1991638858)
 
 ## Database Rules
 
@@ -313,7 +335,7 @@ Note: .upsert uses `update` rules, if no data is updated, it will use `create` r
 
 Validators control whether a particular request will be allowed to execute or not.
 
-They can be provided in three ways:
+They can be provided in four ways:
 
 1. **boolean** - use a boolean when you always know whether a certain request should go through or be blocked
 
@@ -347,34 +369,88 @@ They can be provided in three ways:
 
    Your callback function should either return a Prisma Where object for the corresponding table, or a boolean indicating whether the request should resolve or not.
 
-Example use of callbacks:
+   Example use of callbacks:
 
-```ts
-const rules = {
-  blog: {
-    // where clause: allow reads if the blog is published OR if the user authored the blog
-    find: (uid) => ({ OR: [{ isPublished: true }, { authorId: uid }] }),
+   ```ts
+   const rules = {
+     blog: {
+       // where clause: allow reads if the blog is published OR if the user authored the blog
+       find: (uid) => ({ OR: [{ isPublished: true }, { authorId: uid }] }),
 
-    // prevent the user from setting their own vote count
-    create: (uid, data) => (data.voteCount === 0 ? true : false),
+       // prevent the user from setting their own vote count
+       create: (uid, data) => (data.voteCount === 0 ? true : false),
 
-    // make an async call to determine if request should resolve
-    // note: this should USUALLY be done via a relational query,
-    // which only takes 1 trip to the db, but they are not always practical
-    delete: async (uid) => {
-      const userMakingRequest = await db.user.findFirst({ where: { id: uid } });
-      return userMakingRequest.isAdmin ? true : false;
-    },
+       // make an async call to determine if request should resolve
+       // note: this should USUALLY be done via a relational query,
+       // which only takes 1 trip to the db, but they are not always practical
+       delete: async (uid) => {
+         const userMakingRequest = await prisma.user.findFirst({ where: { id: uid } });
+         return userMakingRequest.isAdmin ? true : false;
+       },
 
-    // you can run literally any javascript you want, anything..
-    update: async (uid) => {
-      const isTheSunShining = await someWeatherApi.sunIsOut();
-      const philliesWinWorldSeries = Math.random() < 0.000001;
-      return isTheSunShining && philliesWinWorldSeries;
-    },
-  },
-};
-```
+       // you can run literally any javascript you want, anything..
+       update: async (uid) => {
+         const isTheSunShining = await someWeatherApi.sunIsOut();
+         const philliesWinWorldSeries = Math.random() < 0.000001;
+         return isTheSunShining && philliesWinWorldSeries;
+       },
+     },
+   };
+   ```
+
+4) **Rule object** - For advanced use cases, you can pass any of the above via a `rule` property in an object.
+
+   ```ts
+   blog {
+     find: {
+       rule: true // OR whereClause OR callback
+     }
+   }
+   // this is equivalent to:
+   blog {
+     find: true
+   }
+   ```
+
+   This allows the use of extra features built into Bridg's rules, like blacklisting fields, and query lifecycle hooks:
+
+   ```ts
+   user {
+     find: {
+       rule: (uid) => !!uid,
+       blockedFields: ['password'],
+       // OR you can whitelist fields instead:
+       allowedFields: ['id', 'email', 'name'],
+       // run some code BEFORE a query is executed:
+       before: (uid, queryArgs, context) => {
+         // eg: bridg.blog.findMany({ where: { name: 'Jim' } });
+         // queryArgs = { where: { name: 'Jim' } } + any additional where clauses from rules
+         // context = { method: 'findMany', originalQuery: queryBeforeRulesApplied }
+
+         // whatever we return will be the new arguments for the query.
+         // be careful not to overwrite the where clauses applied from your rules!
+         return {
+           ...queryArgs,
+           where: { ...queryArgs.where, profileIsPublic: true },
+           include: { ...queryArgs.include, posts: true }
+         }
+       },
+       // modify the result data AFTER the query has been executed:
+       after: (uid, data, context) => {
+         // we can do anything here, like mimic the 'blockedFields' functionality!
+         delete data.password;
+
+         // whatever we return will be sent to the client
+         return data;
+       }
+     },
+     // each method can have their own blockedFields:
+     update: {
+      rule: (uid) => ({ userId: uid }),
+      blockedFields: [], // users can update their password, just not read them
+     }
+   }
+   ```
 
 ### Rules stress testing
 
