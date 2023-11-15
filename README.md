@@ -4,8 +4,6 @@
 
 Bridg let's you query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
 
-This library is still a work in progress, and there are still lots of warts. If you're able to try it out and run into issues, please don't hesitate to open an issue, or ask questions in the Discord.
-
 ```tsx
 <input
   placeholder="Search for blogs.."
@@ -313,7 +311,7 @@ Note: .upsert uses `update` rules, if no data is updated, it will use `create` r
 
 Validators control whether a particular request will be allowed to execute or not.
 
-They can be provided in three ways:
+They can be provided in four ways:
 
 1. **boolean** - use a boolean when you always know whether a certain request should go through or be blocked
 
@@ -347,34 +345,88 @@ They can be provided in three ways:
 
    Your callback function should either return a Prisma Where object for the corresponding table, or a boolean indicating whether the request should resolve or not.
 
-Example use of callbacks:
+   Example use of callbacks:
 
-```ts
-const rules = {
-  blog: {
-    // where clause: allow reads if the blog is published OR if the user authored the blog
-    find: (uid) => ({ OR: [{ isPublished: true }, { authorId: uid }] }),
+   ```ts
+   const rules = {
+     blog: {
+       // where clause: allow reads if the blog is published OR if the user authored the blog
+       find: (uid) => ({ OR: [{ isPublished: true }, { authorId: uid }] }),
 
-    // prevent the user from setting their own vote count
-    create: (uid, data) => (data.voteCount === 0 ? true : false),
+       // prevent the user from setting their own vote count
+       create: (uid, data) => (data.voteCount === 0 ? true : false),
 
-    // make an async call to determine if request should resolve
-    // note: this should USUALLY be done via a relational query,
-    // which only takes 1 trip to the db, but they are not always practical
-    delete: async (uid) => {
-      const userMakingRequest = await db.user.findFirst({ where: { id: uid } });
-      return userMakingRequest.isAdmin ? true : false;
-    },
+       // make an async call to determine if request should resolve
+       // note: this should USUALLY be done via a relational query,
+       // which only takes 1 trip to the db, but they are not always practical
+       delete: async (uid) => {
+         const userMakingRequest = await db.user.findFirst({ where: { id: uid } });
+         return userMakingRequest.isAdmin ? true : false;
+       },
 
-    // you can run literally any javascript you want, anything..
-    update: async (uid) => {
-      const isTheSunShining = await someWeatherApi.sunIsOut();
-      const philliesWinWorldSeries = Math.random() < 0.000001;
-      return isTheSunShining && philliesWinWorldSeries;
-    },
-  },
-};
-```
+       // you can run literally any javascript you want, anything..
+       update: async (uid) => {
+         const isTheSunShining = await someWeatherApi.sunIsOut();
+         const philliesWinWorldSeries = Math.random() < 0.000001;
+         return isTheSunShining && philliesWinWorldSeries;
+       },
+     },
+   };
+   ```
+
+4) **Rule object** - For advanced use cases, you can pass any of the above via a `rule` property in an object.
+
+   ```ts
+   blog {
+     find: {
+       rule: true // OR whereClause OR callback
+     }
+   }
+   // this is equivalent to:
+   blog {
+     find: true
+   }
+   ```
+
+   This allows the use of extra features built into Bridg's rules, like blacklisting fields, and query lifecycle hooks:
+
+   ```ts
+   user {
+     find: {
+       rule: (uid) => !!uid,
+       blockedFields: ['password'],
+       // OR you can whitelist fields instead:
+       allowedFields: ['id', 'email', 'name'],
+       // run some code BEFORE a query is executed:
+       before: (uid, queryArgs, context) => {
+         // eg: bridg.blog.findMany({ where: { name: 'Jim' } });
+         // queryArgs = { where: { name: 'Jim' } } + any additional where clauses from rules
+         // context = { method: 'findMany', originalQuery: queryBeforeRulesApplied }
+
+         // whatever we return will be the new arguments for the query.
+         // be careful not to overwrite the where clauses applied from your rules!
+         return {
+           ...queryArgs,
+           where: { ...queryArgs.where, profileIsPublic: true },
+           include: { ...queryArgs.include, posts: true }
+         }
+       },
+       // modify the result data AFTER the query has been executed:
+       after: (uid, data, context) => {
+         // we can do anything here, like mimic the 'blockedFields' functionality!
+         delete data.password;
+
+         // whatever we return will be sent to the client
+         return data;
+       }
+     },
+     // each method can have their own blockedFields:
+     update: {
+      rule: (uid) => ({ userId: uid }),
+      blockedFields: [], // users can update their password, just not read them
+     }
+   }
+   ```
 
 ### Rules stress testing
 
