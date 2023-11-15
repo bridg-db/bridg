@@ -2,14 +2,14 @@
 
 [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/zHCvaJS4P4)
 
-Bridg let's you query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
+Bridg let's you <u>securely</u> query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
 
 ```tsx
 <input
   placeholder="Search for blogs.."
   onChange={async (e) => {
     const query = e.target.value;
-    const blogs = await db.blog.findMany({
+    const blogs = await bridg.blog.findMany({
       where: { title: { contains: query } },
     });
     setSearchResults(blogs);
@@ -25,6 +25,7 @@ Bridg let's you query your database from the client, like Firebase or Supabase, 
 
 [Getting Started](#getting-started)  
 [Querying Your Database](#querying-your-database)  
+[Realtime Data](#realtime-data)  
 [Protecting Your Data](#database-rules)
 
 ### Supported Databases
@@ -135,7 +136,7 @@ Executing queries works like so:
 ```ts
 import db from 'bridg';
 
-const data = await db.tableName.crudMethod(args);
+const data = await bridg.tableName.crudMethod(args);
 ```
 
 The following are simplified examples. If you're thinking _"I wonder if I could do X with this.."_, the answer is probably yes. You will just need to search for "pagination with Prisma", or for whatever you're trying to achieve.
@@ -144,7 +145,7 @@ The following are simplified examples. If you're thinking _"I wonder if I could 
 
 ```ts
 // create a single db record
-const createdUser = await db.user.create({
+const createdUser = await bridg.user.create({
   data: {
     name: 'John',
     email: 'johndoe@gmail.com',
@@ -152,7 +153,7 @@ const createdUser = await db.user.create({
 });
 
 // create multiple records at once:
-const creationCount = await db.user.createMany({
+const creationCount = await bridg.user.createMany({
   data: [
     { name: 'John', email: 'johndoe@gmail.com' },
     { name: 'Sam', email: 'sam.johnson@outlook.com' },
@@ -161,7 +162,7 @@ const creationCount = await db.user.createMany({
 });
 
 // create a user, and create a relational blog for them
-const createdUser = await db.user.create({
+const createdUser = await bridg.user.create({
   data: {
     name: 'John',
     email: 'johndoe@gmail.com',
@@ -179,36 +180,36 @@ const createdUser = await db.user.create({
 
 ```ts
 // all records within a table:
-const users = await db.user.findMany();
+const users = await bridg.user.findMany();
 
 // all records that satisfy a where clause:
-const users = await db.user.findMany({ where: { profileIsPublic: true } });
+const users = await bridg.user.findMany({ where: { profileIsPublic: true } });
 
 // get the first record that satisfies a where clause:
-const user = await db.user.findFirst({ where: { email: 'johndoe@gmail.com' } });
+const user = await bridg.user.findFirst({ where: { email: 'johndoe@gmail.com' } });
 
 // enforce that only one record could ever exist (must pass a unique column id):
-const user = await db.user.findUnique({ where: { id: 'some-id' } });
+const user = await bridg.user.findUnique({ where: { id: 'some-id' } });
 
 // do the same thing, but throw an error if the data is missing
-const user = await db.user.findUniqueOrThrow({ where: { id: 'some-id' } });
+const user = await bridg.user.findUniqueOrThrow({ where: { id: 'some-id' } });
 ```
 
 ### Including Relational Data:
 
 ```ts
 // all users and a list of all their blogs:
-const users = await db.user.findMany({ include: { blogs: true } });
+const users = await bridg.user.findMany({ include: { blogs: true } });
 
 // where clauses can be applied to relational data:
-const users = await db.user.findMany({
+const users = await bridg.user.findMany({
   include: {
     blogs: { where: { published: true } },
   },
 });
 
 // nest all blogs, and all comments on blogs. its just relations all the way down.
-const users = await db.user.findMany({
+const users = await bridg.user.findMany({
   include: {
     blogs: {
       include: { comments: true },
@@ -223,13 +224,13 @@ For more details on advanced querying, filtering and sorting, [check out this pa
 
 ```ts
 // update a single record
-const updatedData = await db.blog.update({
+const updatedData = await bridg.blog.update({
   where: { id: 'some-id' }, // must use a unique db key to use .update
   data: { title: 'New Blog title' },
 });
 
 // update many records
-const updateCount = await db.blog.updateMany({
+const updateCount = await bridg.blog.updateMany({
   where: { authorId: userId },
   data: { isPublished: true },
 });
@@ -239,11 +240,34 @@ const updateCount = await db.blog.updateMany({
 
 ```ts
 // delete a single record.  must use a unique db key to use .delete
-const deletedBlog = await db.blog.delete({ where: { id: 'some-id' } });
+const deletedBlog = await bridg.blog.delete({ where: { id: 'some-id' } });
 
 // delete many records
-const deleteCount = await db.blog.deleteMany({ where: { isPublished: false } });
+const deleteCount = await bridg.blog.deleteMany({ where: { isPublished: false } });
 ```
+
+## Realtime Data
+
+Bridg supports listening to realtime Database events via [Prisma's Pulse extension](https://www.prisma.io/data-platform/pulse).
+
+```ts
+const subscription = await bridg.message.subscribe({
+  create: {
+    after: { conversationId: 'convo-id' },
+  },
+});
+
+for await (const event of subscription) {
+  const newMsg = event.after;
+  setMessages([...messages, newMsg]);
+}
+```
+
+[Example chat app with realtime events](https://github.com/JoeRoddy/pulse-chat-demo/)
+
+Setting this up at the moment is somewhat cumbersome. Making this easier is a big priority.
+
+For setup instructions, see [this comment](https://github.com/JoeRoddy/bridg/pull/57#issue-1991638858)
 
 ## Database Rules
 
@@ -360,7 +384,7 @@ They can be provided in four ways:
        // note: this should USUALLY be done via a relational query,
        // which only takes 1 trip to the db, but they are not always practical
        delete: async (uid) => {
-         const userMakingRequest = await db.user.findFirst({ where: { id: uid } });
+         const userMakingRequest = await prisma.user.findFirst({ where: { id: uid } });
          return userMakingRequest.isAdmin ? true : false;
        },
 
