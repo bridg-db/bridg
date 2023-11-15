@@ -1,7 +1,7 @@
-import { mockFetch } from './__mocks__/fetch.mock';
-import bridg from './generated/bridg';
-import { expectQueryError } from './utils/query.test-util';
-import { setRules } from './utils/rules.test-util';
+import { mockFetch } from '../__mocks__/fetch.mock';
+import bridg from '../generated/bridg';
+import { expectQueryError } from '../utils/query.test-util';
+import { setRules } from '../utils/rules.test-util';
 
 global.fetch = mockFetch;
 

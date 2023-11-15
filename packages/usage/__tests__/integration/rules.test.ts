@@ -1,15 +1,15 @@
 import { beforeEach, expect, it } from '@jest/globals';
-import { mockFetch } from './__mocks__/fetch.mock';
-import bridg from './generated/bridg';
-import { Blog, Prisma, User } from './generated/prisma';
+import { mockFetch } from '../__mocks__/fetch.mock';
+import bridg from '../generated/bridg';
+import { Blog, Prisma, User } from '../generated/prisma';
 import prisma, {
   TEST_TITLE,
   TEST_TITLE_2,
   deleteDbData,
   seedDbData,
-} from './utils/prisma.test-util';
-import { queryFails, querySucceeds } from './utils/query.test-util';
-import { setRules } from './utils/rules.test-util';
+} from '../utils/prisma.test-util';
+import { queryFails, querySucceeds } from '../utils/query.test-util';
+import { setRules } from '../utils/rules.test-util';
 
 global.fetch = mockFetch;
 

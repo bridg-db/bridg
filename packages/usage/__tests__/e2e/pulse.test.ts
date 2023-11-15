@@ -1,7 +1,8 @@
 import http from 'http';
-import { withPulse } from '../node_modules/@prisma/extension-pulse/dist/cjs/index';
-import { handleRequest } from './generated/bridg-pulse/server/request-handler';
-import { PrismaClient } from './generated/prisma-pulse';
+// unsure right now why this import method is necessary, but it breaks otherwise
+import { withPulse } from '../../node_modules/@prisma/extension-pulse/dist/cjs';
+import { handleRequest } from '../generated/bridg-pulse/server/request-handler';
+import { PrismaClient } from '../generated/prisma-pulse';
 
 jest.setTimeout(30000);
 
