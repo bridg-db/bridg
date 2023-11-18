@@ -23,11 +23,11 @@ npm install --global pnpm@8 ts-node
 
 ## How this repo works
 
-This repo consists of two packages `/packages/generator` and `/packages/usage`
+This repo consists of two packages [/packages/generator](./packages/generator/) and [/packages/usage](./packages/usage)
 
 ### Generator
 
-`/packages/generator` is the main package, this get's installed on a user's machine when they `npm install bridg`.
+[/packages/generator](./packages/generator/) is the main package, this get's installed on a user's machine when they `npm install bridg`.
 
 This is a [prisma generator](https://www.prisma.io/docs/concepts/components/prisma-schema/generators), it runs a code generation step whenever the user runs `npx prisma generate`
 
@@ -37,11 +37,11 @@ Any new features, or changes to existing functionality will be made in this pack
 
 ### Usage
 
-`/packages/usage` is a test environment / playground for generating Bridg clients, for ensuring that generation and DB rules are working properly
+[/packages/usage](./packages/usage/) is a test environment / playground for generating Bridg clients, for ensuring that generation and DB rules are working properly
 
 ## Running Tests
 
-The main test suite is located at [`./packages/usage/__tests__/`](./packages/cli/src/__tests__/)
+The main test suite is located at [`./packages/usage/__tests__/`](./packages/usage/__tests__/)
 
 To run tests:
 
