@@ -454,6 +454,10 @@ They can be provided in four ways:
 
 ### Rules stress testing
 
-There may be undiscovered edgecases where an attacker could circumvent our database rules and access data that they shouldn't be allowed to. Here's a [previous example](https://github.com/JoeRoddy/bridg/issues/2) for reference.
+There may be undiscovered edgecase where a specific type of query could circumvent database rules and access data that it shouldn't be allowed to. Here's a [previous example](https://github.com/JoeRoddy/bridg/issues/2) from an early version of Bridg for reference.
 
 If you stumble upon something like this, please 🙏 [create an issue](https://github.com/JoeRoddy/bridg/issues/new) with a detailed example, so it can be fixed.
+
+### Contributions
+
+To get started, check out the [contributing doc](./CONTRIBUTING.md). pls send help 🙃
