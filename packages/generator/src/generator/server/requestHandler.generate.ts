@@ -402,8 +402,9 @@ export const generateHandlerFile = ({
     ? getRelativeImportPath(handlerPath, prismaLocation)
     : `@prisma/client`;
 
+  const isEdge = `${bridgConfig.edge}` === 'true';
   const fileContent = `// @ts-nocheck
-  import { Prisma, PrismaClient } from '${prismaImportPath}';
+  import { Prisma, PrismaClient } from '${prismaImportPath}${isEdge ? '/edge' : ''}';
   ${withPulse ? `import { withPulse } from '@prisma/extension-pulse';` : ''}
   ${HANDLER_TEMPLATE}
   ${getPulseExports(withPulse)}`;

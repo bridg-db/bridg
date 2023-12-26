@@ -78,7 +78,7 @@ export const generateServerTypes = (models: string[]) => {
 export const generateServerIndexTypesFile = ({
   modelNames,
   outputLocation,
-  prismaLocation = `@prisma/client`,
+  prismaLocation,
 }: {
   modelNames: string[];
   outputLocation: string;

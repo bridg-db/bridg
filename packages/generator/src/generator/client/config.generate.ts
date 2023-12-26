@@ -4,6 +4,7 @@ import { writeFileSafely } from '../../utils/file.util';
 export type BridgConfigOptions = {
   pulse?: boolean;
   debug?: boolean;
+  edge?: boolean;
   output?: string;
   api?: string;
 };
