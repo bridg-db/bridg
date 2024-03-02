@@ -42,7 +42,7 @@
   "homepage": "https://bridg.dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joeroddy/bridg"
+    "url": "https://github.com/bridg-db/bridg"
   },
   "author": "Joe Roddy",
   "keywords": [
