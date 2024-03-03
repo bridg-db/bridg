@@ -293,11 +293,13 @@ const buildSubscribeArgs = (queryArgs: {
   create?: { after: {} };
   delete?: { before: {} };
 }) => {
+  // TODO: remove this, fixes Pulse bug
+  return queryArgs;
+
   const applyRuleToAll = !queryArgs.update && !queryArgs.create && !queryArgs.delete;
   const where = queryArgs.where;
   const subscribeArgs = {};
-  // ['create', 'update', 'delete'].forEach((method) => {
-  ['update'].forEach((method) => {
+  ['create', 'update', 'delete'].forEach((method) => {
     const key = method === 'delete' ? 'before' : 'after';
     let userQuery = queryArgs[method]?.[key] || queryArgs[method];
     if (!userQuery && !applyRuleToAll) return;
