@@ -88,8 +88,9 @@ const messageCallbacks: Record<string, (data: any) => void> = {};
 let ws: WebSocket | undefined;
 const getWebsocket = (): Promise<WebSocket> =>
   new Promise((resolve) => {
-    if (ws && ws.OPEN) resolve(ws);
-    else if (ws && ws.CONNECTING) {
+    if (ws && ws.readyState === ws.OPEN) {
+      resolve(ws);
+    } else if (ws && ws.readyState === ws.CONNECTING) {
       ws.addEventListener('open', () => ws && resolve(ws));
     } else {
       ws = new WebSocket(config.api);
