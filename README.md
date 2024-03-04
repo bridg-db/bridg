@@ -42,7 +42,7 @@ MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQ
 - [React Native](https://github.com/JoeRoddy/bridg-expo-2) - Expo App + Postgres + Netlify
 - [Vue.js](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database
 
-_Want an example project for your favorite framework? Feel free to [create an issue](https://github.com/JoeRoddy/bridg/issues/new), or a PR with a sample._
+_Want an example project for your favorite framework? Feel free to [create an issue](https://github.com/bridg-db/bridg/issues/new), or a PR with a sample._
 
 ### Add Bridg to an existing project
 
@@ -267,7 +267,7 @@ for await (const event of subscription) {
 
 Setting this up at the moment is somewhat cumbersome. Making this easier is a big priority.
 
-For setup instructions, see [this comment](https://github.com/JoeRoddy/bridg/pull/57#issue-1991638858)
+For setup instructions, see [this comment](https://github.com/bridg-db/bridg/pull/57#issue-1991638858)
 
 ## Database Rules
 
@@ -454,9 +454,9 @@ They can be provided in four ways:
 
 ### Rules stress testing
 
-There may be undiscovered edgecase where a specific type of query could circumvent database rules and access data that it shouldn't be allowed to. Here's a [previous example](https://github.com/JoeRoddy/bridg/issues/2) from an early version of Bridg for reference.
+There may be undiscovered edgecase where a specific type of query could circumvent database rules and access data that it shouldn't be allowed to. Here's a [previous example](https://github.com/bridg-db/bridg/issues/2) from an early version of Bridg for reference.
 
-If you stumble upon something like this, please 🙏 [create an issue](https://github.com/JoeRoddy/bridg/issues/new) with a detailed example, so it can be fixed.
+If you stumble upon something like this, please 🙏 [create an issue](https://github.com/bridg-db/bridg/issues/new) with a detailed example, so it can be fixed.
 
 ### Contributions
 

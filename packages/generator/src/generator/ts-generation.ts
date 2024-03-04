@@ -69,7 +69,7 @@ export const generateRulesFile = (options: GeneratorOptions, outputRoot: string)
   const importPath = getRelativeImportPath(rulesLocation, `${outputRoot}/server`);
   const rulesFileContent = `import { DbRules } from '${importPath}';
 
-// https://github.com/joeroddy/bridg#database-rules
+// https://github.com/bridg-db/bridg#database-rules
 export const rules: DbRules = {
   // global default, allow/block non-specified queries, set to true only in development
   default: false, 
