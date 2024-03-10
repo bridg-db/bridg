@@ -297,15 +297,14 @@ const buildSubscribeArgs = (queryArgs: {
   const where = queryArgs.where;
   const subscribeArgs = {};
   ['create', 'update', 'delete'].forEach((method) => {
-    const key = method === 'delete' ? 'before' : 'after';
-    let userQuery = queryArgs[method]?.[key] || queryArgs[method];
+    let userQuery = method === 'update' ? queryArgs[method]?.after : queryArgs[method];
     if (!userQuery && !applyRuleToAll) return;
     const queryWithRules = {
       ...userQuery,
       AND: [...(where?.AND || []), ...asArray(userQuery?.AND || [])],
     };
 
-    subscribeArgs[method] = { [key]: queryWithRules };
+    subscribeArgs[method] = method === 'update' ? { before: queryWithRules } : queryWithRules;
   });
   return subscribeArgs;
 };
