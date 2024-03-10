@@ -1,6 +1,6 @@
 import http from 'http';
 // unsure right now why this import method is necessary, but it breaks otherwise
-import { withPulse } from '../../node_modules/@prisma/extension-pulse/dist/cjs';
+import { withPulse } from '../../node_modules/@prisma/extension-pulse/dist/cjs/entry.node';
 import { handleRequest } from '../generated/bridg-pulse/server/request-handler';
 import { PrismaClient } from '../generated/prisma-pulse';
 
@@ -129,7 +129,7 @@ it('user defined filters working with where clauses', async () => {
   createPulseListener(
     {
       model: 'user',
-      args: { create: { name: 'fake' }, delete: { before: { name: 'john' } } },
+      args: { create: { name: 'fake' }, delete: { name: 'john' } },
       rules: { user: { find: { email: FAKE_USER_EMAIL } } },
     },
     (e) => eventsEmitted.push(e.action)
@@ -145,7 +145,7 @@ it('cannot run pulse queries against relational rules', async () => {
   const res = await createPulseListener(
     {
       model: 'user',
-      args: { create: { name: 'fake' }, delete: { before: { name: 'john' } } },
+      args: { create: { name: 'fake' }, delete: { name: 'john' } },
       rules: { user: { find: { email: FAKE_USER_EMAIL, blogs: { some: { title: 'hi' } } } } },
     },
     (e) => eventsEmitted.push(e.action)
