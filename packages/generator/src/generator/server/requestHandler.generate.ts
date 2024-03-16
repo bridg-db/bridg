@@ -74,6 +74,14 @@ export const handleRequest = async (
     queryArgs = beforeHook ? beforeHook(uid, args, { method: func, originalQuery }) : args;
 
     if (func === 'subscribe') {
+      if (queryArgs.where && whereReferencesRelations(queryArgs.where, model)) {
+        return {
+          status: 400,
+          data: {
+            error: \`Pulse does not support querying relational fields. Check your DB rule for \${model}.find\`,
+          },
+        };
+      }
       const subscribeArgs = buildSubscribeArgs(queryArgs);
       const subscription = await db[model][func](subscribeArgs);
       onSubscriptionCreated?.(subscription);
@@ -287,12 +295,14 @@ const stripBlockedFields = (data: {} | any[], rules: DbRules): any => {
 };
 
 const asArray = (item: Array | any) => (Array.isArray(item) ? item : [item]);
-const buildSubscribeArgs = (queryArgs: {
-  where: {};
-  update?: { after: {} };
-  create?: { after: {} };
-  delete?: { before: {} };
-}) => {
+const buildSubscribeArgs = (
+  queryArgs: {
+    where: {}; // database rules
+    update?: { after: {} };
+    create?: {};
+    delete?: {};
+  }
+) => {
   const applyRuleToAll = !queryArgs.update && !queryArgs.create && !queryArgs.delete;
   const where = queryArgs.where;
   const subscribeArgs = {};
@@ -304,9 +314,21 @@ const buildSubscribeArgs = (queryArgs: {
       AND: [...(where?.AND || []), ...asArray(userQuery?.AND || [])],
     };
 
-    subscribeArgs[method] = method === 'update' ? { before: queryWithRules } : queryWithRules;
+    subscribeArgs[method] = method === 'update' ? { after: queryWithRules } : queryWithRules;
   });
   return subscribeArgs;
+};
+
+const whereReferencesRelations = (where: any, model: ModelName) => {
+  if (!where) return false;
+  const modelRelations = MODEL_RELATION_MAP[model];
+  const relationKeys = Object.keys(modelRelations);
+
+  if (relationKeys.some((key) => where[key])) return true;
+  if (where.OR?.some((orQuery) => whereReferencesRelations(orQuery, model))) return true;
+  if (where.AND?.some((andQuery) => whereReferencesRelations(andQuery, model))) return true;
+
+  return false;
 };
 
 const funcOptions = [
