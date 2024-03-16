@@ -71,17 +71,30 @@ export const handleRequest = async (
   let data;
   try {
     const beforeHook = rules[model]?.[method]?.before;
-    queryArgs = beforeHook ? beforeHook(uid, args, { method: func, originalQuery }) : args;
+    queryArgs = beforeHook ? beforeHook(uid, args, { method: func, originalQuery, prisma: db }) : args;
 
     if (func === 'subscribe') {
+      if (queryArgs.where && whereReferencesRelations(queryArgs.where, model)) {
+        return {
+          status: 400,
+          data: {
+            error: \`Pulse does not support querying relational fields. Check your DB rule for \${model}.find\`,
+          },
+        };
+      }
       const subscribeArgs = buildSubscribeArgs(queryArgs);
       const subscription = await db[model][func](subscribeArgs);
       onSubscriptionCreated?.(subscription);
       if (subscription instanceof Error) onSubscriptionEvent({ error: subscription });
       for await (const event of subscription) {
-        const dataKey = 'before' in event ? 'before' : 'after';
-        const cleanedData = stripBlockedFields({ $kind: model, ...event[dataKey] }, rules);
-        onSubscriptionEvent({ ...event, [dataKey]: cleanedData });
+        const eventValueKeys = ['before', 'after', 'created', 'deleted'];
+        const cleanedData = eventValueKeys.reduce((acc, key) => {
+          if (key in event) {
+            acc[key] = stripBlockedFields({ $kind: model, ...event[key] }, rules);
+          }
+          return acc;
+        }, event);
+        onSubscriptionEvent({ ...event, ...cleanedData });
       }
       return;
     } else {
@@ -95,7 +108,7 @@ export const handleRequest = async (
 
   const afterHook = rules[model]?.[method]?.after;
   const resultData = afterHook
-    ? await afterHook(uid, cleanedData, { method: func, queryExecuted: queryArgs, originalQuery })
+    ? await afterHook(uid, cleanedData, { method: func, queryExecuted: queryArgs, originalQuery, prisma: db })
     : cleanedData;
 
   return { status: 200, data: resultData };
@@ -287,26 +300,41 @@ const stripBlockedFields = (data: {} | any[], rules: DbRules): any => {
 };
 
 const asArray = (item: Array | any) => (Array.isArray(item) ? item : [item]);
-const buildSubscribeArgs = (queryArgs: {
-  where: {};
-  update?: { after: {} };
-  create?: { after: {} };
-  delete?: { before: {} };
-}) => {
+const buildSubscribeArgs = (
+  queryArgs: {
+    where: {}; // database rules
+    update?: { after: {} };
+    create?: {};
+    delete?: {};
+  }
+) => {
   const applyRuleToAll = !queryArgs.update && !queryArgs.create && !queryArgs.delete;
   const where = queryArgs.where;
   const subscribeArgs = {};
   ['create', 'update', 'delete'].forEach((method) => {
-    let userQuery = method === 'update' ? queryArgs[method]?.after : queryArgs[method];
+    const methodArgs = queryArgs[method];
+    let userQuery = method === 'update' ? methodArgs?.after || methodArgs : methodArgs;
     if (!userQuery && !applyRuleToAll) return;
     const queryWithRules = {
       ...userQuery,
       AND: [...(where?.AND || []), ...asArray(userQuery?.AND || [])],
     };
 
-    subscribeArgs[method] = method === 'update' ? { before: queryWithRules } : queryWithRules;
+    subscribeArgs[method] = method === 'update' ? { after: queryWithRules } : queryWithRules;
   });
   return subscribeArgs;
+};
+
+const whereReferencesRelations = (where: any, model: ModelName) => {
+  if (!where) return false;
+  const modelRelations = MODEL_RELATION_MAP[model];
+  const relationKeys = Object.keys(modelRelations);
+
+  if (relationKeys.some((key) => where[key])) return true;
+  if (where.OR?.some((orQuery) => whereReferencesRelations(orQuery, model))) return true;
+  if (where.AND?.some((andQuery) => whereReferencesRelations(andQuery, model))) return true;
+
+  return false;
 };
 
 const funcOptions = [

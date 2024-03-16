@@ -191,3 +191,21 @@ it('Before/after hooks work with delete', async () => {
   const deleted = await prisma.blog.findUnique({ where: { id: testBlog2.id } });
   expect(deleted).toBeNull();
 });
+
+it('Can access prisma in callback context', async () => {
+  setRules({
+    blog: {
+      find: {
+        rule: true,
+        before: async (uid, q, ctx) => {
+          const b = await ctx.prisma.blog.findFirst({ where: { id: testBlog1.id } });
+          expect(b?.id).toBe(testBlog1.id);
+          return b?.id ? q : { id: null };
+        },
+      },
+    },
+  });
+
+  const b1 = await querySucceeds(bridg.blog.findFirst({ where: { id: testBlog1.id } }));
+  expect(b1?.title).toBe(testBlog1.title);
+});
