@@ -144,3 +144,16 @@ it('Find rules work with nested relations', async () => {
   await querySucceeds(bridg.user.findUnique({ where: { id: testUser.id }, include }));
   await querySucceeds(bridg.user.findUniqueOrThrow({ where: { id: testUser.id }, include }));
 });
+
+it('Find rules work with AND', async () => {
+  setRules({ blog: { find: { id: testBlog2.id } } });
+  await querySucceeds(
+    bridg.blog.findMany({ where: { AND: [{ body: testBlog2.body }, { title: testBlog2.title }] } }),
+    1
+  );
+  await querySucceeds(
+    bridg.blog.findMany({ where: { AND: [{ body: testBlog2.body }, { title: testBlog1.title }] } }),
+    0
+  );
+  await querySucceeds(bridg.blog.findMany({ where: { AND: [{ title: testBlog1.title }] } }), 0);
+});
