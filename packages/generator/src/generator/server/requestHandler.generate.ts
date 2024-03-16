@@ -307,7 +307,8 @@ const buildSubscribeArgs = (
   const where = queryArgs.where;
   const subscribeArgs = {};
   ['create', 'update', 'delete'].forEach((method) => {
-    let userQuery = method === 'update' ? queryArgs[method]?.after : queryArgs[method];
+    const methodArgs = queryArgs[method];
+    let userQuery = method === 'update' ? methodArgs?.after || methodArgs : methodArgs;
     if (!userQuery && !applyRuleToAll) return;
     const queryWithRules = {
       ...userQuery,

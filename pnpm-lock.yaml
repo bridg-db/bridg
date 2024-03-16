@@ -73,8 +73,8 @@ importers:
         specifier: 5.6.0
         version: 5.6.0(prisma@5.6.0)
       '@prisma/extension-pulse':
-        specifier: ^1.0.0
-        version: 1.0.0(@prisma/client@5.6.0)
+        specifier: ^1.0.1
+        version: 1.0.1(@prisma/client@5.6.0)
     devDependencies:
       '@jest/globals':
         specifier: ^29.6.2
@@ -1153,8 +1153,8 @@ packages:
     resolution: {integrity: sha512-Mt2q+GNJpU2vFn6kif24oRSBQv1KOkYaterQsi0k2/lA+dLvhRX6Lm26gon6PYHwUM8/h8KRgXIUMU0PCLB6bw==}
     requiresBuild: true
 
-  /@prisma/extension-pulse@1.0.0(@prisma/client@5.6.0):
-    resolution: {integrity: sha512-JWIn7zPZyt4+to47qEh75NyZigYR31dhU+S0U4UJezQqnSchH/Gj9NemA+DFsUlvtify+/jSVE2KW/SwxxzUDA==}
+  /@prisma/extension-pulse@1.0.1(@prisma/client@5.6.0):
+    resolution: {integrity: sha512-9kITZGup0ny/sVFVH5HGHwS2i+MG4qMs504HLtF+KcsxS8hHAXpajkdX+gXgESUo1oYoRtulFRt9aOt1bverxg==}
     engines: {node: '>=18'}
     peerDependencies:
       '@prisma/client': '>=4.16.1'

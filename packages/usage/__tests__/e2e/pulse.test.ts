@@ -47,12 +47,33 @@ const createPulseListener = (
     }
   );
 
+afterEach(async () => {
+  closeSubscriptions();
+  await sleep(2);
+});
+
+afterAll(async () => {
+  closeSubscriptions();
+  prisma.$disconnect();
+});
+
+const isInternetConnected = () =>
+  new Promise((resolve) =>
+    http
+      .get('http://www.google.com', (res) =>
+        resolve(res?.statusCode && res.statusCode >= 200 && res.statusCode < 300)
+      )
+      .on('error', () => resolve(false))
+  );
+
 const runCreateUpdateDelete = async () => {
-  await sleep(0.5);
+  await sleep(2);
   const userCreated = await prisma.user.create({ data: { email: FAKE_USER_EMAIL } });
+  await sleep(2);
   await prisma.user.update({ where: { id: userCreated.id }, data: { name: 'john' } });
+  await sleep(2);
   await prisma.user.delete({ where: { id: userCreated.id } });
-  await sleep(3);
+  await sleep(2);
 };
 
 it('subscribe emits on creation, update, delete events', async () => {
@@ -77,9 +98,8 @@ it('false rules prevent reading with pulse', async () => {
 
   await runCreateUpdateDelete();
 
-  expect(res.status).toBe(401);
+  expect(res?.status).toBe(401);
   expect(eventsEmitted).toBe(0);
-  closeSubscriptions();
 });
 
 it('true rules allow reading with pulse', async () => {
@@ -98,9 +118,7 @@ it('where clause rules prevent reading inaccessible data ', async () => {
   );
 
   await runCreateUpdateDelete();
-
   expect(eventsEmitted.length).toBe(0);
-  closeSubscriptions();
 });
 
 it('where clauses allow reading accessible data', async () => {
@@ -150,26 +168,7 @@ it('cannot run pulse queries against relational rules', async () => {
     },
     (e) => eventsEmitted.push(e.action)
   );
+  expect(res?.status).toBe(400);
   await runCreateUpdateDelete();
-  expect(res.status).toBe(500);
   expect(eventsEmitted.length).toBe(0);
 });
-
-afterEach(() => {
-  closeSubscriptions();
-});
-
-afterAll(async () => {
-  prisma.$disconnect();
-  closeSubscriptions();
-});
-
-function isInternetConnected() {
-  return new Promise((resolve) => {
-    http
-      .get('http://www.google.com', (res) =>
-        resolve(res?.statusCode && res.statusCode >= 200 && res.statusCode < 300)
-      )
-      .on('error', () => resolve(false));
-  });
-}
