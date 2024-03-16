@@ -177,7 +177,7 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
     } else {
       const rulesWhere = ruleWhereOrBool === true ? {} : ruleWhereOrBool;
       // Note: AND: [args.where, rulesWhere] breaks on findUnique, update, delete
-      args.where = { ...(args?.where || {}), AND: [rulesWhere] };
+      args.where = { ...(args?.where || {}), AND: [rulesWhere, ...(args?.where?.AND || []) ] };
     }
   }
   const modelRelations = MODEL_RELATION_MAP[model];
