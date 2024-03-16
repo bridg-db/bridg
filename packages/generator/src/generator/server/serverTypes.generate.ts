@@ -38,11 +38,11 @@ export const generateServerTypes = (models: string[]) => {
     | ({
         rule: RuleOrCallback<RuleOptions, CreateInput>;
         // TODO: callback typing
-        before?: (uid: string, query: any, ctx: { method: Methods; originalQuery: any }) => any;
+        before?: (uid: string, query: any, ctx: { method: Methods; originalQuery: any, prisma: PrismaClient }) => any;
         after?: (
           uid: string,
           data: any,
-          ctx: { method: Methods; queryExecuted: any; originalQuery: any }
+          ctx: { method: Methods; queryExecuted: any; originalQuery: any, prisma: PrismaClient }
         ) => any;
       } & WhitelistOption<ModelWhereInput>);
   declare type ModelRules<WhereInput, CreateInput> = Partial<
@@ -91,7 +91,9 @@ export const generateServerIndexTypesFile = ({
     : `@prisma/client`;
 
   // { Prisma, User, Model2, Model3 }
-  const importStatement = `import { Prisma, ${modelNames.join(', ')} } from '${prismaImportPath}';`;
+  const importStatement = `import { Prisma, type PrismaClient, ${modelNames.join(
+    ', '
+  )} } from '${prismaImportPath}';`;
   const fileContent = `${importStatement}${types}`;
 
   writeFileSafely(filePath, fileContent);

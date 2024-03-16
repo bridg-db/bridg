@@ -71,7 +71,7 @@ export const handleRequest = async (
   let data;
   try {
     const beforeHook = rules[model]?.[method]?.before;
-    queryArgs = beforeHook ? beforeHook(uid, args, { method: func, originalQuery }) : args;
+    queryArgs = beforeHook ? beforeHook(uid, args, { method: func, originalQuery, prisma: db }) : args;
 
     if (func === 'subscribe') {
       if (queryArgs.where && whereReferencesRelations(queryArgs.where, model)) {
@@ -87,9 +87,14 @@ export const handleRequest = async (
       onSubscriptionCreated?.(subscription);
       if (subscription instanceof Error) onSubscriptionEvent({ error: subscription });
       for await (const event of subscription) {
-        const dataKey = 'before' in event ? 'before' : 'after';
-        const cleanedData = stripBlockedFields({ $kind: model, ...event[dataKey] }, rules);
-        onSubscriptionEvent({ ...event, [dataKey]: cleanedData });
+        const eventValueKeys = ['before', 'after', 'created', 'deleted'];
+        const cleanedData = eventValueKeys.reduce((acc, key) => {
+          if (key in event) {
+            acc[key] = stripBlockedFields({ $kind: model, ...event[key] }, rules);
+          }
+          return acc;
+        }, event);
+        onSubscriptionEvent({ ...event, ...cleanedData });
       }
       return;
     } else {
@@ -103,7 +108,7 @@ export const handleRequest = async (
 
   const afterHook = rules[model]?.[method]?.after;
   const resultData = afterHook
-    ? await afterHook(uid, cleanedData, { method: func, queryExecuted: queryArgs, originalQuery })
+    ? await afterHook(uid, cleanedData, { method: func, queryExecuted: queryArgs, originalQuery, prisma: db })
     : cleanedData;
 
   return { status: 200, data: resultData };
