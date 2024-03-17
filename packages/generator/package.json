@@ -21,7 +21,7 @@
   "dependencies": {
     "@prisma/generator-helper": "5.9.1",
     "@types/strip-comments": "^2.0.1",
-    "prettier": "2.5.1",
+    "prettier": "3.0.3",
     "strip-comments": "^2.0.1"
   },
   "devDependencies": {
@@ -30,7 +30,7 @@
     "@semantic-release/git": "^10.0.1",
     "@types/jest": "29.5.3",
     "@types/node": "20.11.19",
-    "@types/prettier": "2.4.2",
+    "@types/prettier": "3.0.0",
     "jest": "27.4.7",
     "semantic-release": "^18.0.1",
     "ts-jest": "27.1.4",
