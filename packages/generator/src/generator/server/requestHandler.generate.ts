@@ -175,17 +175,10 @@ const applyRulesWheres = async (
       throw { message: 'No data provided for .create or .createMany' }
     }
 
-    console.log('args.data', args.data);
-    
     if (Array.isArray(args.data)) {
-      // if (!Array.isArray(args.data)) throw { message: 'createMany data must be an array' };
-      console.log('createMany data', args.data);
-      
       const ruleBoolArray = await Promise.all(
         args.data.map(async (data) => queryValidator(uid, data)),
       );
-      console.log('arr results', ruleBoolArray);
-      
       ruleWhereOrBool = !ruleBoolArray.some((result) => result !== true);
     } else {
       ruleWhereOrBool = await queryValidator(uid, args.data);

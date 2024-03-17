@@ -10,7 +10,7 @@ jest.setTimeout(30000);
 const sleep = (seconds: number) => new Promise((res) => setTimeout(res, seconds * 1000));
 
 const prisma = new PrismaClient().$extends(
-  withPulse({ apiKey: process.env.PULSE_API_KEY! })
+  withPulse({ apiKey: process.env.PULSE_API_KEY! }),
 ) as unknown as PrismaClient;
 
 let subscriptions: any[] = [];
@@ -35,7 +35,7 @@ const createPulseListener = (
     rules?: Parameters<typeof handleRequest>[1]['rules'];
     uid?: string;
   },
-  pulseCallback: (data: any) => void
+  pulseCallback: (data: any) => void,
 ) =>
   handleRequest(
     { func: 'subscribe', model: request.model, args: request.args || {} },
@@ -45,7 +45,7 @@ const createPulseListener = (
       db: prisma,
       onSubscriptionEvent: (event) => pulseCallback(event),
       onSubscriptionCreated: (subscription) => subscriptions.push(subscription),
-    }
+    },
   );
 
 afterEach(async () => {
@@ -62,9 +62,9 @@ const isInternetConnected = () =>
   new Promise((resolve) =>
     http
       .get('http://www.google.com', (res) =>
-        resolve(res?.statusCode && res.statusCode >= 200 && res.statusCode < 300)
+        resolve(res?.statusCode && res.statusCode >= 200 && res.statusCode < 300),
       )
-      .on('error', () => resolve(false))
+      .on('error', () => resolve(false)),
   );
 
 const runCreateUpdateDelete = async () => {
@@ -94,7 +94,7 @@ it('false rules prevent reading with pulse', async () => {
 
   const res = await createPulseListener(
     { model: 'user', rules: { user: { default: false } } },
-    () => eventsEmitted++
+    () => eventsEmitted++,
   );
 
   await runCreateUpdateDelete();
@@ -115,7 +115,7 @@ it('where clause rules prevent reading inaccessible data ', async () => {
 
   createPulseListener(
     { model: 'user', rules: { user: { find: { email: 'nonmatch@gmail.com' } } } },
-    (e) => eventsEmitted.push(e.action)
+    (e) => eventsEmitted.push(e.action),
   );
 
   await runCreateUpdateDelete();
@@ -134,7 +134,7 @@ it('where clauses allow reading accessible data', async () => {
       },
       rules: { user: { find: { email: USER_EMAIL } } },
     },
-    (e) => eventsEmitted.push(e.action)
+    (e) => eventsEmitted.push(e.action),
   );
   await runCreateUpdateDelete();
   expect(eventsEmitted.length).toBe(2);
@@ -151,7 +151,7 @@ it('user defined filters working with where clauses', async () => {
       args: { create: { name: 'fake' }, delete: { name: 'john' } },
       rules: { user: { find: { email: USER_EMAIL } } },
     },
-    (e) => eventsEmitted.push(e.action)
+    (e) => eventsEmitted.push(e.action),
   );
   await runCreateUpdateDelete();
   expect(eventsEmitted.length).toBe(1);
@@ -171,7 +171,7 @@ it('Pulse queries working with OR rules', async () => {
         user: { find: (uid) => ({ OR: [{ email: 'wrong-email@yahoo.com' }, { id: uid }] }) },
       },
     },
-    (e) => eventsEmitted.push(e.action)
+    (e) => eventsEmitted.push(e.action),
   );
   await sleep(2);
   await prisma.user.update({ where: { id: userCreated.id }, data: { name: 'john' } });
@@ -195,7 +195,7 @@ it('Blocked fields works with pulse', async () => {
         },
       },
     },
-    (e) => eventsEmitted.push(e)
+    (e) => eventsEmitted.push(e),
   );
 
   await runCreateUpdateDelete();
@@ -229,12 +229,10 @@ it('Allowed fields works with pulse', async () => {
         },
       },
     },
-    (e) => eventsEmitted.push(e)
+    (e) => eventsEmitted.push(e),
   );
 
   await runCreateUpdateDelete();
-
-  console.log('events', eventsEmitted);
 
   expect(eventsEmitted.length).toBe(3);
   const valueKeys = ['created', 'after', 'before', 'deleted'];
@@ -259,7 +257,7 @@ it('cannot run pulse queries against relational rules', async () => {
       args: { create: { name: 'fake' }, delete: { name: 'john' } },
       rules: { user: { find: { email: USER_EMAIL, blogs: { some: { title: 'hi' } } } } },
     },
-    (e) => eventsEmitted.push(e.action)
+    (e) => eventsEmitted.push(e.action),
   );
   expect(res?.status).toBe(400);
   await runCreateUpdateDelete();
