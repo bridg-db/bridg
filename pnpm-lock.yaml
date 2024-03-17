@@ -107,6 +107,12 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
 
+  packages/usage/__tests__/generated/prisma: {}
+
+  packages/usage/__tests__/generated/prisma-pulse: {}
+
+  packages/usage/prisma/prisma: {}
+
 packages:
 
   /@ampproject/remapping@2.2.1:
