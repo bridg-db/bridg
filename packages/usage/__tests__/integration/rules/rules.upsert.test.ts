@@ -1,12 +1,9 @@
 import { beforeEach, expect, it } from '@jest/globals';
-import { mockFetch } from '../../__mocks__/fetch.mock';
 import bridg from '../../generated/bridg';
 import { Blog, User } from '../../generated/prisma';
 import prisma, { deleteDbData, seedDbData } from '../../utils/prisma.test-util';
 import { queryFails, querySucceeds } from '../../utils/query.test-util';
 import { setRules } from '../../utils/rules.test-util';
-
-global.fetch = mockFetch;
 
 let testBlog1: Blog;
 let testBlog2: Blog;
@@ -37,7 +34,7 @@ it('Upsert queries correctly use update, then create rules', async () => {
       where: { id: 'nonexistent' },
       update: {},
       create: { title: 'hello' },
-    })
+    }),
   );
   // fails immediately when trying to update
   setRules({ blog: { update: false, create: true } });
@@ -46,7 +43,7 @@ it('Upsert queries correctly use update, then create rules', async () => {
       where: { id: testBlog1.id },
       update: {},
       create: { title: 'hello' },
-    })
+    }),
   );
   // SUCCESS
   setRules({ blog: { update: { id: 'nonexistent!!' }, create: true } });
@@ -55,7 +52,7 @@ it('Upsert queries correctly use update, then create rules', async () => {
       where: { id: 'nonexistent' },
       update: {},
       create: { title: 'hello' },
-    })
+    }),
   );
   expect(newBlog.title).toBe('hello');
   setRules({ blog: { update: true, create: false } });
@@ -64,7 +61,7 @@ it('Upsert queries correctly use update, then create rules', async () => {
       where: { id: testBlog1.id },
       update: { body: 'edited-body' },
       create: { title: 'hello' },
-    })
+    }),
   );
   expect(editedBlog.body).toBe('edited-body');
   expect(editedBlog.id).toBe(testBlog1.id);

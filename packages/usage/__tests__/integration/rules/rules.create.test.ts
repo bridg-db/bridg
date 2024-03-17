@@ -1,12 +1,9 @@
 import { beforeEach, expect, it } from '@jest/globals';
-import { mockFetch } from '../../__mocks__/fetch.mock';
 import bridg from '../../generated/bridg';
 import { Blog, User } from '../../generated/prisma';
 import { TEST_TITLE, deleteDbData, seedDbData } from '../../utils/prisma.test-util';
 import { queryFails, querySucceeds } from '../../utils/query.test-util';
 import { setRules } from '../../utils/rules.test-util';
-
-global.fetch = mockFetch;
 
 let testBlog1: Blog;
 let testBlog2: Blog;
@@ -50,7 +47,7 @@ it('Create rules work when creating related models', async () => {
         email: 'charlie@nightcrawlers.io',
         blogs: { create: { title: 'my blog' } },
       },
-    })
+    }),
   );
   await queryFails(
     bridg.user.create({
@@ -58,7 +55,7 @@ it('Create rules work when creating related models', async () => {
         email: 'charlie@nightcrawlers.io',
         blogs: { create: [{ title: 'my blog' }, { title: 'my blog 2' }] },
       },
-    })
+    }),
   );
   // SUCCESS
   setRules({ user: { create: true }, blog: { create: true } });
@@ -68,7 +65,7 @@ it('Create rules work when creating related models', async () => {
         email: 'charlie@nightcrawlers.io',
         blogs: { create: { title: 'my blog' } },
       },
-    })
+    }),
   );
   // TODO: this throws an error, not appropriately handling checks for when they pass an array
   // await querySucceeds(
@@ -96,7 +93,7 @@ it('Supports model.rule property as an alternative for setting rules', async () 
     bridg.blog.update({
       where: { id: testBlog1.id },
       data: { title: 'updated' },
-    })
+    }),
   );
 
   // SUCCESS

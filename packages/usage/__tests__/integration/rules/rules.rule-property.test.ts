@@ -1,12 +1,9 @@
 import { beforeEach, expect, it } from '@jest/globals';
-import { mockFetch } from '../../__mocks__/fetch.mock';
 import bridg from '../../generated/bridg';
 import { Blog, User } from '../../generated/prisma';
 import { TEST_TITLE, deleteDbData, seedDbData } from '../../utils/prisma.test-util';
 import { queryFails, querySucceeds } from '../../utils/query.test-util';
 import { setRules } from '../../utils/rules.test-util';
-
-global.fetch = mockFetch;
 
 let testBlog1: Blog;
 let testBlog2: Blog;
@@ -43,7 +40,7 @@ it('Supports model.rule property as an alternative for setting rules', async () 
     bridg.blog.update({
       where: { id: testBlog1.id },
       data: { title: 'updated' },
-    })
+    }),
   );
 
   // SUCCESS
@@ -62,6 +59,6 @@ it('Supports model.rule property as an alternative for setting rules', async () 
     bridg.blog.update({
       where: { id: testBlog1.id },
       data: { title: 'updated' },
-    })
+    }),
   );
 });
