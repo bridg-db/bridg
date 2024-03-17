@@ -2,6 +2,7 @@ src
 node_modules
 tsconfig.json
 README.md
+CONTRIBUTING.md
 jest.config.js
 yarn.lock
 yarn-error.log

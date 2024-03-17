@@ -106,3 +106,23 @@ export const formatFile = (content: string): Promise<string> => {
     })
   );
 };
+
+export const getRelativePathWithLeadingDot = (
+  sourceFile: string,
+  targetFile: string
+) => {
+  const sourceDir = path.dirname(sourceFile);
+  const loc = path.relative(sourceDir, targetFile);
+  // x/y/z => ./x/y/z
+  return loc.startsWith('.') ? loc : `./${loc}`;
+};
+
+export const getRelativeImportPath = (
+  sourceFile: string,
+  importedFile: string
+) => {
+  const location = getRelativePathWithLeadingDot(sourceFile, importedFile);
+  const [beforeNM, afterNM] = location.split('node_modules/');
+  // ./x/y/node_modules/z => z || ./x/y/z => ./x/y/z
+  return afterNM || beforeNM;
+};
