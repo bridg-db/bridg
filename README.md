@@ -2,16 +2,14 @@
 
 [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/zHCvaJS4P4)
 
-Bridg let's you query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
-
-This library is still a work in progress, and there are still lots of warts. If you're able to try it out and run into issues, please don't hesitate to open an issue, or ask questions in the Discord.
+Bridg let's you <u>securely</u> query your database from the client, like Firebase or Supabase, but with the power and type-safety of Prisma.
 
 ```tsx
 <input
   placeholder="Search for blogs.."
   onChange={async (e) => {
     const query = e.target.value;
-    const blogs = await db.blog.findMany({
+    const blogs = await bridg.blog.findMany({
       where: { title: { contains: query } },
     });
     setSearchResults(blogs);
@@ -27,6 +25,7 @@ This library is still a work in progress, and there are still lots of warts. If 
 
 [Getting Started](#getting-started)  
 [Querying Your Database](#querying-your-database)  
+[Realtime Data](#realtime-data)  
 [Protecting Your Data](#database-rules)
 
 ### Supported Databases
@@ -37,73 +36,65 @@ MongoDB, Postgres, MySQL (& Planetscale), SQLite, Microsoft SQL Server, Azure SQ
 
 ### Example Projects
 
-[Next.js (basic)](https://github.com/JoeRoddy/bridg-example-nextjs) Simple Next.js example with SQLite database ([Codesandbox](https://codesandbox.io/p/sandbox/inspiring-lake-e7w5cg?file=%2Fsrc%2Fpages%2Findex.tsx))
+- [Next.js (basic)](https://github.com/JoeRoddy/bridg-example-nextjs) Simple Next.js example with SQLite database ([Codesandbox](https://codesandbox.io/p/sandbox/weathered-waterfall-h4fzgs?file=%2Fsrc%2Fpages%2Findex.tsx%3A9%2C26&layout=%257B%2522sidebarPanel%2522%253A%2522EXPLORER%2522%252C%2522rootPanelGroup%2522%253A%257B%2522direction%2522%253A%2522horizontal%2522%252C%2522contentType%2522%253A%2522UNKNOWN%2522%252C%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522id%2522%253A%2522ROOT_LAYOUT%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522UNKNOWN%2522%252C%2522direction%2522%253A%2522vertical%2522%252C%2522id%2522%253A%2522clozx2caa00073b6kbnemk8ly%2522%252C%2522sizes%2522%253A%255B70%252C30%255D%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522EDITOR%2522%252C%2522direction%2522%253A%2522horizontal%2522%252C%2522id%2522%253A%2522EDITOR%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL%2522%252C%2522contentType%2522%253A%2522EDITOR%2522%252C%2522id%2522%253A%2522clozx2caa00043b6kro0qwgyw%2522%257D%255D%252C%2522sizes%2522%253A%255B100%255D%257D%252C%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522SHELLS%2522%252C%2522direction%2522%253A%2522horizontal%2522%252C%2522id%2522%253A%2522SHELLS%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL%2522%252C%2522contentType%2522%253A%2522SHELLS%2522%252C%2522id%2522%253A%2522clozx2caa00053b6kfh7f1cbs%2522%257D%255D%252C%2522sizes%2522%253A%255B100%255D%257D%255D%257D%252C%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522DEVTOOLS%2522%252C%2522direction%2522%253A%2522vertical%2522%252C%2522id%2522%253A%2522DEVTOOLS%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL%2522%252C%2522contentType%2522%253A%2522DEVTOOLS%2522%252C%2522id%2522%253A%2522clozx2caa00063b6ki4vuxapp%2522%257D%255D%252C%2522sizes%2522%253A%255B100%255D%257D%255D%252C%2522sizes%2522%253A%255B60%252C40%255D%257D%252C%2522tabbedPanels%2522%253A%257B%2522clozx2caa00043b6kro0qwgyw%2522%253A%257B%2522id%2522%253A%2522clozx2caa00043b6kro0qwgyw%2522%252C%2522activeTabId%2522%253A%2522clozx2caa00033b6kcac511yn%2522%252C%2522tabs%2522%253A%255B%257B%2522id%2522%253A%2522clozx2caa00033b6kcac511yn%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522type%2522%253A%2522FILE%2522%252C%2522filepath%2522%253A%2522%252Fsrc%252Fpages%252Findex.tsx%2522%252C%2522state%2522%253A%2522IDLE%2522%257D%252C%257B%2522type%2522%253A%2522FILE%2522%252C%2522filepath%2522%253A%2522%252Fpackage.json%2522%252C%2522id%2522%253A%2522clozx4v6w00da3b6ktfzlo9vf%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522state%2522%253A%2522IDLE%2522%257D%252C%257B%2522type%2522%253A%2522FILE%2522%252C%2522filepath%2522%253A%2522%252Fsrc%252Fpages%252Fapi%252Fbridg.ts%2522%252C%2522id%2522%253A%2522clozx7qfq01nr3b6ktilbge8e%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522state%2522%253A%2522IDLE%2522%257D%252C%257B%2522type%2522%253A%2522FILE%2522%252C%2522filepath%2522%253A%2522%252Fprisma%252Frules.ts%2522%252C%2522id%2522%253A%2522clozx8sb700593b6juckswhcg%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522state%2522%253A%2522IDLE%2522%257D%255D%257D%252C%2522clozx2caa00063b6ki4vuxapp%2522%253A%257B%2522id%2522%253A%2522clozx2caa00063b6ki4vuxapp%2522%252C%2522tabs%2522%253A%255B%257B%2522type%2522%253A%2522UNASSIGNED_PORT%2522%252C%2522port%2522%253A3000%252C%2522id%2522%253A%2522clozx6xi5017u3b6kc6topzcc%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522path%2522%253A%2522%252F%2522%257D%255D%252C%2522activeTabId%2522%253A%2522clozx6xi5017u3b6kc6topzcc%2522%257D%252C%2522clozx2caa00053b6kfh7f1cbs%2522%253A%257B%2522id%2522%253A%2522clozx2caa00053b6kfh7f1cbs%2522%252C%2522activeTabId%2522%253A%2522clozx5k5500u33b6kvgwt0lkg%2522%252C%2522tabs%2522%253A%255B%257B%2522id%2522%253A%2522clozx5k5500u33b6kvgwt0lkg%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522type%2522%253A%2522TERMINAL%2522%252C%2522shellId%2522%253A%2522clozx5k7i000ueffwfj8f1xl9%2522%257D%255D%257D%257D%252C%2522showDevtools%2522%253Atrue%252C%2522showShells%2522%253Atrue%252C%2522showSidebar%2522%253Atrue%252C%2522sidebarPanelSize%2522%253A15%257D))
+- [Next.js (blogging app)](https://github.com/JoeRoddy/bridg-example-nextjs-auth-blogs) - Next.js, next-auth authentication, CRUD examples, SQLite
+- [create-react-app (serverless)](https://github.com/JoeRoddy/bridg-example-cra) - CRA + Postgres + Netlify function (for Bridg)
+- [React Native](https://github.com/JoeRoddy/bridg-expo-2) - Expo App + Postgres + Netlify
+- [Vue.js](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database
 
-[Next.js (blogging app)](https://github.com/JoeRoddy/bridg-example-nextjs-auth-blogs) - Next.js, next-auth authentication, CRUD examples, SQLite
-
-[create-react-app (serverless)](https://github.com/JoeRoddy/bridg-example-cra) - CRA + Postgres + Netlify function (for Bridg)
-
-[React Native](https://github.com/JoeRoddy/bridg-expo-2) - Expo App + Postgres + Netlify
-
-[Vue.js](https://github.com/JoeRoddy/bridg-example-nuxt) - Simple Vue / Nuxt example with SQLite database
-
-_Want an example project for your favorite framework? Feel free to [create an issue](https://github.com/JoeRoddy/bridg/issues/new), or a PR with a sample._
+_Want an example project for your favorite framework? Feel free to [create an issue](https://github.com/bridg-db/bridg/issues/new), or a PR with a sample._
 
 ### Add Bridg to an existing project
 
 1. [Configure your project to use Prisma ](https://www.prisma.io/docs/getting-started/setup-prisma/add-to-existing-project/relational-databases-typescript-postgres) (Bridg currently requires prisma `5.0.0` or later.)
-
-```shell
-    npm i -D prisma
-    npm i @prisma/client
-    npx prisma init --datasource-provider sqlite
-    # opts: postgresql, mysql, sqlite, sqlserver, mongodb, cockroachdb
-```
-
+   ```shell
+   npm i -D prisma
+   npm i @prisma/client
+   npx prisma init --datasource-provider sqlite
+   # opts: postgresql, mysql, sqlite, sqlserver, mongodb, cockroachdb
+   ```
 2. Install Bridg: `npm install bridg`
-
 3. Add the Bridg generator to your `schema.prisma` :
 
-```ts
-generator client {
-  provider = "prisma-client-js"
-}
+   ```ts
+   generator client {
+     provider = "prisma-client-js"
+   }
 
-// Add this UNDER your prisma client
-generator bridg {
-  provider = "bridg"
-}
-```
+   // Add this UNDER your prisma client
+   generator bridg {
+     provider = "bridg"
+   }
+   ```
 
 4. Generate your clients: `npx prisma generate`
-
 5. Expose an API endpoint at `/api/bridg` or configure a [custom endpoint](#Generator-Options) to handle requests:
 
-```ts
-// Example Next.js API handler, translate to your JS API framework of choice
-import { handleRequest } from 'bridg/server/request-handler';
-import { PrismaClient } from '@prisma/client';
+   ```ts
+   // Example Next.js API handler, translate to your JS API framework of choice
+   import { handleRequest } from 'bridg/server/request-handler';
+   import { PrismaClient } from '@prisma/client';
 
-const db = new PrismaClient();
+   const db = new PrismaClient();
 
-// allows all requests, don't ship like this, ya dingus
-const rules = { default: true };
+   // allows all requests, don't ship like this, ya dingus
+   const rules = { default: true };
 
-export default async function handler(req, res) {
-  // Mock authentication, replace with any auth system you want
-  const userId = 'authenticated-user-id';
+   export default async function handler(req, res) {
+     // Mock authentication, replace with any auth system you want
+     const userId = 'authenticated-user-id';
 
-  // pass the request (req.body), your prisma client (db),
-  // the user making the request (uid), and your database rules (rules)
-  const { data, status } = await handleRequest(req.body, {
-    db,
-    uid: userId,
-    rules,
-  });
+     // pass the request (req.body), your prisma client (db),
+     // the user making the request (uid), and your database rules (rules)
+     const { data, status } = await handleRequest(req.body, {
+       db,
+       uid: userId,
+       rules,
+     });
 
-  return res.status(status).json(data);
-}
-```
+     return res.status(status).json(data);
+   }
+   ```
 
 You should be good to go! Try using the Bridg client on your frontend:
 
@@ -122,9 +113,9 @@ const CreateBlogButton = ({ blog }) => (
 generator bridg {
   provider = "bridg"
   // customize Bridg client output location
-  output = "/custom/client/path" // (defaults to node_modules/bridg)
+  output   = "/custom/client/path" // (defaults to node_modules/bridg)
   // customize api endpoint Bridg will send queries to
-  api = "https://example.com/api/bridg" // (defaults to /api/bridg)
+  api      = "https://example.com/api/bridg" // (defaults to /api/bridg)
 }
 ```
 
@@ -138,14 +129,14 @@ Bridg is built on top of Prisma, you can check out the basics of executing CRUD 
 
 The [Prisma documentation](https://www.prisma.io/docs/getting-started) is excellent and is highly recommended if you haven't used Prisma in the past.
 
-For security reasons, some functionality isn't available, but I'm working towards full compatibility with Prisma. Currently `upsert`, `connectOrCreate`, `set`, and `discconnect` are unavailable inside of nested queries.
+For security reasons, some functionality isn't available, but I'm working towards full compatibility with Prisma. Currently `upsert`, `connectOrCreate`, `set`, and `disconnect` are unavailable inside of nested queries.
 
 Executing queries works like so:
 
 ```ts
 import db from 'bridg';
 
-const data = await db.tableName.crudMethod(args);
+const data = await bridg.tableName.crudMethod(args);
 ```
 
 The following are simplified examples. If you're thinking _"I wonder if I could do X with this.."_, the answer is probably yes. You will just need to search for "pagination with Prisma", or for whatever you're trying to achieve.
@@ -154,7 +145,7 @@ The following are simplified examples. If you're thinking _"I wonder if I could 
 
 ```ts
 // create a single db record
-const createdUser = await db.user.create({
+const createdUser = await bridg.user.create({
   data: {
     name: 'John',
     email: 'johndoe@gmail.com',
@@ -162,7 +153,7 @@ const createdUser = await db.user.create({
 });
 
 // create multiple records at once:
-const creationCount = await db.user.createMany({
+const creationCount = await bridg.user.createMany({
   data: [
     { name: 'John', email: 'johndoe@gmail.com' },
     { name: 'Sam', email: 'sam.johnson@outlook.com' },
@@ -171,7 +162,7 @@ const creationCount = await db.user.createMany({
 });
 
 // create a user, and create a relational blog for them
-const createdUser = await db.user.create({
+const createdUser = await bridg.user.create({
   data: {
     name: 'John',
     email: 'johndoe@gmail.com',
@@ -189,36 +180,36 @@ const createdUser = await db.user.create({
 
 ```ts
 // all records within a table:
-const users = await db.user.findMany();
+const users = await bridg.user.findMany();
 
 // all records that satisfy a where clause:
-const users = await db.user.findMany({ where: { profileIsPublic: true } });
+const users = await bridg.user.findMany({ where: { profileIsPublic: true } });
 
 // get the first record that satisfies a where clause:
-const user = await db.user.findFirst({ where: { email: 'johndoe@gmail.com' } });
+const user = await bridg.user.findFirst({ where: { email: 'johndoe@gmail.com' } });
 
 // enforce that only one record could ever exist (must pass a unique column id):
-const user = await db.user.findUnique({ where: { id: 'some-id' } });
+const user = await bridg.user.findUnique({ where: { id: 'some-id' } });
 
 // do the same thing, but throw an error if the data is missing
-const user = await db.user.findUniqueOrThrow({ where: { id: 'some-id' } });
+const user = await bridg.user.findUniqueOrThrow({ where: { id: 'some-id' } });
 ```
 
 ### Including Relational Data:
 
 ```ts
 // all users and a list of all their blogs:
-const users = await db.user.findMany({ include: { blogs: true } });
+const users = await bridg.user.findMany({ include: { blogs: true } });
 
 // where clauses can be applied to relational data:
-const users = await db.user.findMany({
+const users = await bridg.user.findMany({
   include: {
     blogs: { where: { published: true } },
   },
 });
 
 // nest all blogs, and all comments on blogs. its just relations all the way down.
-const users = await db.user.findMany({
+const users = await bridg.user.findMany({
   include: {
     blogs: {
       include: { comments: true },
@@ -233,13 +224,13 @@ For more details on advanced querying, filtering and sorting, [check out this pa
 
 ```ts
 // update a single record
-const updatedData = await db.blog.update({
+const updatedData = await bridg.blog.update({
   where: { id: 'some-id' }, // must use a unique db key to use .update
   data: { title: 'New Blog title' },
 });
 
 // update many records
-const updateCount = await db.blog.updateMany({
+const updateCount = await bridg.blog.updateMany({
   where: { authorId: userId },
   data: { isPublished: true },
 });
@@ -249,11 +240,34 @@ const updateCount = await db.blog.updateMany({
 
 ```ts
 // delete a single record.  must use a unique db key to use .delete
-const deletedBlog = await db.blog.delete({ where: { id: 'some-id' } });
+const deletedBlog = await bridg.blog.delete({ where: { id: 'some-id' } });
 
 // delete many records
-const deleteCount = await db.blog.deleteMany({ where: { isPublished: false } });
+const deleteCount = await bridg.blog.deleteMany({ where: { isPublished: false } });
 ```
+
+## Realtime Data
+
+Bridg supports listening to realtime Database events via [Prisma's Pulse extension](https://www.prisma.io/data-platform/pulse).
+
+```ts
+const subscription = await bridg.message.subscribe({
+  create: {
+    after: { conversationId: 'convo-id' },
+  },
+});
+
+for await (const event of subscription) {
+  const newMsg = event.after;
+  setMessages([...messages, newMsg]);
+}
+```
+
+[Example chat app with realtime events](https://github.com/JoeRoddy/pulse-chat-demo/)
+
+Setting this up at the moment is somewhat cumbersome. Making this easier is a big priority.
+
+For setup instructions, see [this comment](https://github.com/bridg-db/bridg/pull/57#issue-1991638858)
 
 ## Database Rules
 
@@ -268,6 +282,8 @@ Because your database is now available on the frontend, that means anyone who ca
 Your rules could look something like the following:
 
 ```ts
+import { type DbRules } from 'bridg/server';
+
 export const rules: DbRules = {
   user: {
     find: { profileIsPublic: true }, // only allow reads on public profiles
@@ -319,7 +335,7 @@ Note: .upsert uses `update` rules, if no data is updated, it will use `create` r
 
 Validators control whether a particular request will be allowed to execute or not.
 
-They can be provided in three ways:
+They can be provided in four ways:
 
 1. **boolean** - use a boolean when you always know whether a certain request should go through or be blocked
 
@@ -353,37 +369,95 @@ They can be provided in three ways:
 
    Your callback function should either return a Prisma Where object for the corresponding table, or a boolean indicating whether the request should resolve or not.
 
-Example use of callbacks:
+   Example use of callbacks:
 
-```ts
-const rules = {
-  blog: {
-    // where clause: allow reads if the blog is published OR if the user authored the blog
-    find: (uid) => ({ OR: [{ isPublished: true }, { authorId: uid }] }),
+   ```ts
+   const rules = {
+     blog: {
+       // where clause: allow reads if the blog is published OR if the user authored the blog
+       find: (uid) => ({ OR: [{ isPublished: true }, { authorId: uid }] }),
 
-    // prevent the user from setting their own vote count
-    create: (uid, data) => (data.voteCount === 0 ? true : false),
+       // prevent the user from setting their own vote count
+       create: (uid, data) => (data.voteCount === 0 ? true : false),
 
-    // make an async call to determine if request should resolve
-    // note: this should USUALLY be done via a relational query,
-    // which only takes 1 trip to the db, but they are not always practical
-    delete: async (uid) => {
-      const userMakingRequest = await db.user.findFirst({ where: { id: uid } });
-      return userMakingRequest.isAdmin ? true : false;
-    },
+       // make an async call to determine if request should resolve
+       // note: this should USUALLY be done via a relational query,
+       // which only takes 1 trip to the db, but they are not always practical
+       delete: async (uid) => {
+         const userMakingRequest = await prisma.user.findFirst({ where: { id: uid } });
+         return userMakingRequest.isAdmin ? true : false;
+       },
 
-    // you can run literally any javascript you want, anything..
-    update: async (uid) => {
-      const isTheSunShining = await someWeatherApi.sunIsOut();
-      const philliesWinWorldSeries = Math.random() < 0.000001;
-      return isTheSunShining && philliesWinWorldSeries;
-    },
-  },
-};
-```
+       // you can run literally any javascript you want, anything..
+       update: async (uid) => {
+         const isTheSunShining = await someWeatherApi.sunIsOut();
+         const philliesWinWorldSeries = Math.random() < 0.000001;
+         return isTheSunShining && philliesWinWorldSeries;
+       },
+     },
+   };
+   ```
+
+4) **Rule object** - For advanced use cases, you can pass any of the above via a `rule` property in an object.
+
+   ```ts
+   blog {
+     find: {
+       rule: true // OR whereClause OR callback
+     }
+   }
+   // this is equivalent to:
+   blog {
+     find: true
+   }
+   ```
+
+   This allows the use of extra features built into Bridg's rules, like blacklisting fields, and query lifecycle hooks:
+
+   ```ts
+   user {
+     find: {
+       rule: (uid) => !!uid,
+       blockedFields: ['password'],
+       // OR you can whitelist fields instead:
+       allowedFields: ['id', 'email', 'name'],
+       // run some code BEFORE a query is executed:
+       before: (uid, queryArgs, context) => {
+         // eg: bridg.blog.findMany({ where: { name: 'Jim' } });
+         // queryArgs = { where: { name: 'Jim' } } + any additional where clauses from rules
+         // context = { method: 'findMany', originalQuery: queryBeforeRulesApplied }
+
+         // whatever we return will be the new arguments for the query.
+         // be careful not to overwrite the where clauses applied from your rules!
+         return {
+           ...queryArgs,
+           where: { ...queryArgs.where, profileIsPublic: true },
+           include: { ...queryArgs.include, posts: true }
+         }
+       },
+       // modify the result data AFTER the query has been executed:
+       after: (uid, data, context) => {
+         // we can do anything here, like mimic the 'blockedFields' functionality!
+         delete data.password;
+
+         // whatever we return will be sent to the client
+         return data;
+       }
+     },
+     // each method can have their own blockedFields:
+     update: {
+      rule: (uid) => ({ userId: uid }),
+      blockedFields: [], // users can update their password, just not read them
+     }
+   }
+   ```
 
 ### Rules stress testing
 
-There may be undiscovered edgecases where an attacker could circumvent our database rules and access data that they shouldn't be allowed to. Here's a [previous example](https://github.com/JoeRoddy/bridg/issues/2) for reference.
+There may be undiscovered edgecase where a specific type of query could circumvent database rules and access data that it shouldn't be allowed to. Here's a [previous example](https://github.com/bridg-db/bridg/issues/2) from an early version of Bridg for reference.
 
-If you stumble upon something like this, please 🙏 [create an issue](https://github.com/JoeRoddy/bridg/issues/new) with a detailed example, so it can be fixed.
+If you stumble upon something like this, please 🙏 [create an issue](https://github.com/bridg-db/bridg/issues/new) with a detailed example, so it can be fixed.
+
+### Contributions
+
+To get started, check out the [contributing doc](./CONTRIBUTING.md). pls send help 🙃

@@ -1,15 +1,20 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "./prisma"
 }
 
 generator bridg {
   provider = "bridg"
   output   = "./bridg"
+  // pulse    = true
+  // api      = "ws://localhost:3000"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  // provider = "sqlite"
+  // url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {

@@ -5,9 +5,13 @@
   "main": "src/app.js",
   "license": "MIT",
   "scripts": {
-    "test:prepare": "npx prisma db push --schema=__tests__/__fixtures__/test.prisma;",
+    "test:prepare": "npm run test:prepare-int && npm run test:prepare-pulse",
+    "test:prepare-int": "pnpm --F bridg -- npm run prepack && npx prisma db push --schema=__tests__/__fixtures__/test.prisma;",
+    "test:prepare-pulse": "pnpm --F bridg -- npm run prepack && npx prisma db push --schema=__tests__/__fixtures__/pulse-test.prisma;",
     "test": "jest --runInBand",
-    "test:prisma-versions": "npx ts-node ./scripts/test-prisma-versions.ts",
+    "test:int": "jest --testPathPattern='^(?!.*pulse.test.ts$).*.test.ts$' --runInBand",
+    "test:pulse": "jest pulse.test.ts --runInBand",
+    "test:prisma-versions": "npx ts-node ./__tests__/e2e/test-prisma-versions.ts",
     "prisma:install": "pnpm i -D prisma@$VERSION && pnpm i @prisma/client@$VERSION",
     "prisma:versions": "npm view prisma versions | grep -v '-'"
   },
@@ -17,12 +21,14 @@
     "@types/node": "16.11.7",
     "bridg": "workspace:*",
     "jest": "27.4.7",
-    "prisma": "5.0.0",
+    "prisma": "5.6.0",
     "ts-jest": "27.1.4",
     "ts-node": "^10.9.1",
-    "typescript": "4.5.2"
+    "typescript": "4.5.2",
+    "web-streams-polyfill": "^4.0.0"
   },
   "dependencies": {
-    "@prisma/client": "5.0.0"
+    "@prisma/client": "5.6.0",
+    "@prisma/extension-pulse": "^1.0.1"
   }
 }

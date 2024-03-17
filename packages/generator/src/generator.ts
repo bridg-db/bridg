@@ -1,15 +1,10 @@
 import { generatorHandler, GeneratorOptions } from '@prisma/generator-helper';
-import { renameSync, rmSync } from 'fs';
 import path from 'path';
 import * as ts from 'typescript';
 import { compileTsDir } from './compileTsDir';
 import { GENERATOR_NAME, VERSION } from './constants';
-import { generateBridgTsFiles } from './generator/ts-generation';
-import {
-  deleteDirSafely,
-  deleteFileSafely,
-  moveDirContentsToDirectory,
-} from './utils/file.util';
+import { generateBridgTsFiles, generateRulesFile } from './generator/ts-generation';
+import { deleteDirSafely, deleteFileSafely } from './utils/file.util';
 
 generatorHandler({
   onManifest() {
@@ -23,33 +18,24 @@ generatorHandler({
     };
   },
   onGenerate: async (options: GeneratorOptions) => {
-    const api = (options.generator.config.api as string) || '/api/bridg';
     const debug = options.generator.config.debug === 'true';
     const outRoot = options.generator.output?.value || './node_modules/bridg';
-
-    const schemaPath = options.schemaPath;
-    const tempDir = path.join(outRoot, 'tmp');
-    const tsOutDir = path.join(tempDir, 'output');
+    // keep at same level, dont make /tmp a subdirectory
+    // causes issues when trying to import custom prisma output paths
+    const tempDir = outRoot + '_tmp';
 
     cleanupPreviouslyGeneratedFiles(outRoot);
-    generateBridgTsFiles(schemaPath, tempDir, api);
-    compileBridgFiles(tempDir, tsOutDir, debug);
-
-    // move files to desired output location, cleanup temp dir
-    await moveDirContentsToDirectory(path.join(tsOutDir, 'client'), outRoot);
-    renameSync(path.join(tsOutDir, 'server'), path.join(outRoot, 'server'));
-    rmSync(tempDir, { recursive: true, force: true });
+    generateBridgTsFiles(options, tempDir);
+    compileBridgFiles(tempDir, outRoot, debug);
+    deleteDirSafely(tempDir);
+    generateRulesFile(options, outRoot);
 
     return;
   },
 });
 
-const compileBridgFiles = (
-  sourceDir: string,
-  outDir: string,
-  debug = false
-) => {
-  // capture meaningless error output
+const compileBridgFiles = (sourceDir: string, outDir: string, debug = false) => {
+  // capture unimportant ts error output
   const originalConsoleLog = console.log;
   if (debug) console.log = function () {};
   compileTsDir(sourceDir, {
@@ -69,7 +55,7 @@ const compileBridgFiles = (
 
 const cleanupPreviouslyGeneratedFiles = (baseDir: string) => {
   deleteDirSafely(path.join(baseDir, 'server'));
-  deleteDirSafely(path.join(baseDir, 'tmp'));
+  deleteDirSafely(baseDir + '_tmp');
   deleteFileSafely(path.join(baseDir, 'index.js'));
   deleteFileSafely(path.join(baseDir, 'index.ts'));
 };
