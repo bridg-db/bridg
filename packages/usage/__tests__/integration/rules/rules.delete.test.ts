@@ -1,5 +1,4 @@
 import { beforeEach, expect, it } from '@jest/globals';
-import { mockFetch } from '../../__mocks__/fetch.mock';
 import bridg from '../../generated/bridg';
 import { Blog, Prisma, User } from '../../generated/prisma';
 import prisma, {
@@ -15,8 +14,6 @@ const fetchBlog1 = () => prisma.blog.findFirst({ where: { id: testBlog1.id } });
 const fetchBlog2 = () => prisma.blog.findFirst({ where: { id: testBlog2.id } });
 
 const x = [prisma, expect, it, bridg, Prisma, TEST_TITLE, TEST_TITLE_2, queryFails, querySucceeds];
-
-global.fetch = mockFetch;
 
 let testBlog1: Blog;
 let testBlog2: Blog;
@@ -86,7 +83,7 @@ it('Find rules work on delete includes', async () => {
     bridg.user.delete({
       where: { id: testUser.id },
       include: { blogs: { include: { comments: true } } },
-    })
+    }),
   );
 
   // SUCCESS
@@ -102,6 +99,6 @@ it('Find rules work on delete includes', async () => {
     bridg.user.delete({
       where: { id: testUser.id },
       include: { blogs: { include: { comments: true } } },
-    })
+    }),
   );
 });

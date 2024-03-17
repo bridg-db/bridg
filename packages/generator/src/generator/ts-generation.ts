@@ -5,7 +5,6 @@ import strip from 'strip-comments';
 import {
   getRelativeImportPath,
   getRelativePathWithLeadingDot,
-  readFileAsString,
   writeFileSafely,
 } from '../utils/file.util';
 import { uncapitalize } from '../utils/string.util';
@@ -21,13 +20,22 @@ export const parseModelNamesFromSchema = (prismaSchema: string) =>
 
 export const generateBridgTsFiles = (options: GeneratorOptions, outputLocation: string) =>
   generateFiles({
-    schemaStr: readFileAsString(options.schemaPath),
+    schemaStr: options.datamodel,
     modelNames: options.dmmf.datamodel.models.map((m) => m.name),
     outputLocation,
     prismaLocation:
       options.otherGenerators.find((g) => g.name === 'client')?.output?.value || undefined,
     bridgConfig: options.generator.config as BridgConfigOptions,
+    dbProvider: options.datasources[0].provider as PrismaDbProvider,
   });
+
+export type PrismaDbProvider =
+  | 'postgresql'
+  | 'mysql'
+  | 'sqlite'
+  | 'sqlserver'
+  | 'mongodb'
+  | 'cockroachdb';
 
 export const generateFiles = ({
   schemaStr,
@@ -35,12 +43,14 @@ export const generateFiles = ({
   outputLocation,
   prismaLocation,
   bridgConfig = {},
+  dbProvider,
 }: {
   schemaStr: string;
   modelNames: string[];
   outputLocation: string;
   prismaLocation?: string;
   bridgConfig?: BridgConfigOptions;
+  dbProvider?: PrismaDbProvider;
 }) => {
   if (!schemaStr) throw new Error(`Schema not provided`);
   //   if (!schemaStr.match(/.+["']extendedWhereUnique["'].+/g)) {
@@ -54,7 +64,7 @@ export const generateFiles = ({
 
   schemaStr = strip(schemaStr);
 
-  generateClientDbFile({ modelNames, outputLocation, prismaLocation });
+  generateClientDbFile({ modelNames, outputLocation, prismaLocation, dbProvider });
   // server
   generateHandlerFile({ bridgConfig, outputLocation, prismaLocation });
   generateModelRelationsFile({ modelNames, schemaStr, outputLocation });
@@ -83,7 +93,7 @@ export const rules: DbRules = {
     update: (uid, data) => false,
     create: (uid, data) => false,
     delete: (uid) => false,
-  },`
+  },`,
     )
     .join('')}
 };`;

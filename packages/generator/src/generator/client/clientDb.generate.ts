@@ -1,11 +1,12 @@
 import path from 'path';
+import { type PrismaDbProvider } from 'src/generator/ts-generation';
 import { getRelativeImportPath, writeFileSafely } from '../../utils/file.util';
 import { capitalize, uncapitalize } from '../../utils/string.util';
 
 const generateExports = (models: string[]) => {
   const exports = models.reduce(
     (acc, model) => `${acc}\n  ${uncapitalize(model)}:${uncapitalize(model)}Client,`,
-    ``
+    ``,
   );
 
   return `
@@ -17,7 +18,7 @@ const wsTypedObj = (
 const bridg = {${exports}\n...wsTypedObj,\n};\nexport default bridg;`;
 };
 
-const getHead = () => `
+const getHead = (dbProvider?: PrismaDbProvider) => `
 import config from './bridg.config';
 import { type ModelName } from './server';
 import { type PulseSubscribe } from './server/request-handler';
@@ -47,7 +48,12 @@ export const exec = (
 const generateClient = (model: string): Record<string, (args: any) => void> => ({
   aggregate: (args) => exec({ func: 'aggregate', model, args }),
   count: (args) => exec({ func: 'count', model, args }),
-  create: (args) => exec({ func: 'create', model, args }),
+  create: (args) => exec({ func: 'create', model, args }),${
+    dbProvider === 'sqlite'
+      ? ''
+      : `\n\tcreateMany: (args) => exec({ func: 'createMany', model, args }),\n`
+  }
+  createMany: (args) => exec({ func: 'createMany', model, args }),
   delete: (args) => exec({ func: 'delete', model, args }),
   deleteMany: (args) => exec({ func: 'deleteMany', model, args }),
   findFirst: (args) => exec({ func: 'findFirst', model, args }),
@@ -78,9 +84,7 @@ type BridgSubscribe<model extends ModelName> = {
   Promise<Exclude<Awaited<ReturnType<PulseSubscribe<model>>>, Error>>;
 };
 type BridgModel<PrismaDelegate, model extends ModelName> = Omit<
-  PrismaDelegate,
-  'createMany' | 'fields'
-> &
+  PrismaDelegate, 'fields'> &
   (typeof config.pulseEnabled extends true ? BridgSubscribe<model> : {});
 
 // Websocket helpers, needed for Pulse enabled projects
@@ -181,17 +185,19 @@ const MODEL_TEMPLATE = `const *{model}Client = generateClient('*{model}') as Bri
 const genModelClient = (model: string) =>
   MODEL_TEMPLATE.replaceAll(`*{model}`, uncapitalize(model)).replaceAll(
     `*{Model}`,
-    capitalize(model)
+    capitalize(model),
   );
 
 export const generateClientDbFile = ({
   modelNames,
   outputLocation,
   prismaLocation,
+  dbProvider,
 }: {
   modelNames: string[];
   outputLocation: string;
   prismaLocation?: string;
+  dbProvider?: PrismaDbProvider;
 }) => {
   const filePath = path.join(outputLocation, 'index.ts');
 
@@ -201,8 +207,8 @@ export const generateClientDbFile = ({
 
   const importStatement = `import { Prisma } from '${prismaImportPath}';`;
   const modelClients = modelNames.reduce((acc, model) => `${acc}${genModelClient(model)}`, ``);
-  const clientDbCode = `${importStatement}${getHead()}${modelClients}${generateExports(
-    modelNames
+  const clientDbCode = `${importStatement}${getHead(dbProvider)}${modelClients}${generateExports(
+    modelNames,
   )}`;
 
   //   writeFileSafely(`${'./node_modules/bridg/dist/package'}/client/db.ts`, clientDbCode);

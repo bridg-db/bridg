@@ -1,9 +1,6 @@
-import { mockFetch } from '../../__mocks__/fetch.mock';
 import bridg from '../../generated/bridg';
 import { expectQueryError } from '../../utils/query.test-util';
 import { setRules } from '../../utils/rules.test-util';
-
-global.fetch = mockFetch;
 
 const TEST_TITLE = 'TEST_BLOG';
 
@@ -23,6 +20,6 @@ it('Unauthed Err message reflects correct failing model', async () => {
       where: { title: TEST_TITLE },
       include: { user: true },
     }),
-    ': user'
+    ': user',
   );
 });

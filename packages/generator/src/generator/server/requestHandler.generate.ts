@@ -18,7 +18,7 @@ export const handleRequest = async (
     uid?: string;
     onSubscriptionCreated?: (sub: any) => void;
     onSubscriptionEvent?: (args: any) => void;
-  }
+  },
 ) => {
   const typedClient = withTypename(config.db);
 
@@ -49,7 +49,7 @@ export const handleRequest = async (
         method = 'create';
       }
     }
-    await applyRulesWheres(args, { model, method }, { uid, rules });
+    await applyRulesWheres(args, { model, method, func }, { uid, rules });
   } catch (err: any) {
     if (err?.message === 'Unauthorized') {
       return {
@@ -61,7 +61,7 @@ export const handleRequest = async (
     } else {
       return {
         status: 400,
-        data: { error: \`Error executing Bridg query: \${err?.message}\` },
+        data: { error: \`Error executing Bridg query: \$\{err?.message}\` },
       };
     }
   }
@@ -71,14 +71,16 @@ export const handleRequest = async (
   let data;
   try {
     const beforeHook = rules[model]?.[method]?.before;
-    queryArgs = beforeHook ? beforeHook(uid, args, { method: func, originalQuery, prisma: db }) : args;
+    queryArgs = beforeHook
+      ? beforeHook(uid, args, { method: func, originalQuery, prisma: db })
+      : args;
 
     if (func === 'subscribe') {
       if (queryArgs.where && whereReferencesRelations(queryArgs.where, model)) {
         return {
           status: 400,
           data: {
-            error: \`Pulse does not support querying relational fields. Check your DB rule for \${model}.find\`,
+            error: \`Pulse does not support querying relational fields. Check your DB rule for \$\{model}.find\`,
           },
         };
       }
@@ -108,7 +110,12 @@ export const handleRequest = async (
 
   const afterHook = rules[model]?.[method]?.after;
   const resultData = afterHook
-    ? await afterHook(uid, cleanedData, { method: func, queryExecuted: queryArgs, originalQuery, prisma: db })
+    ? await afterHook(uid, cleanedData, {
+        method: func,
+        queryExecuted: queryArgs,
+        originalQuery,
+        prisma: db,
+      })
     : cleanedData;
 
   return { status: 200, data: resultData };
@@ -120,11 +127,12 @@ const applyRulesWheres = async (
     model: ModelName;
     acceptsWheres?: boolean;
     method: 'find' | 'create' | 'update' | 'delete';
+    func?: PrismaFunction;
   },
-  context: { uid?: string; rules: DbRules }
+  context: { uid?: string; rules: DbRules },
 ) => {
   const { uid, rules } = context;
-  const { model, acceptsWheres = true, method } = options;
+  const { model, acceptsWheres = true, method, func } = options;
   const modelMethodValidator = rules[model]?.[method];
   const modelDefaultValidator = rules[model]?.default;
   // can't use "a || b || c", bc it would inadvertently skip "method:false" rules
@@ -159,15 +167,34 @@ const applyRulesWheres = async (
     }
   }
 
-  const ruleWhereOrBool =
-    typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
+  let ruleWhereOrBool;
+  if(typeof queryValidator !== 'boolean' && method === 'create') {
+    if(typeof queryValidator !== 'function') {
+      throw { message:  \`Invalid rule result for \${model}:\${method} - Create only accepts booleans\` }
+    } else if(!args.data){
+      throw { message: 'No data provided for .create or .createMany' }
+    }
+
+    if (Array.isArray(args.data)) {
+      const ruleBoolArray = await Promise.all(
+        args.data.map(async (data) => queryValidator(uid, data)),
+      );
+      ruleWhereOrBool = !ruleBoolArray.some((result) => result !== true);
+    } else {
+      ruleWhereOrBool = await queryValidator(uid, args.data);
+    }
+  } else {
+    ruleWhereOrBool =
+      typeof queryValidator === 'function' ? await queryValidator(uid, args?.data) : queryValidator;
+  }
+
   if (ruleWhereOrBool === false) throw { message: 'Unauthorized', data: { model } };
   if (typeof ruleWhereOrBool === 'object' && !acceptsWheres) {
     console.error(
       \`Rule error on nested model: "\${model}".  Cannot apply prisma where clauses to N-1 or 1-1 required relationships, only 1-N.
 More info: https://github.com/prisma/prisma/issues/15837#issuecomment-1290404982
 
-To fix this until issue is resolved: Change "\${model}" db rules to not rely on where clauses, OR for N-1 relationships, invert the include so the "\${model}" model is including the many table. (N-1 => 1-N)\`
+To fix this until issue is resolved: Change "\${model}" db rules to not rely on where clauses, OR for N-1 relationships, invert the include so the "\${model}" model is including the many table. (N-1 => 1-N)\`,
     );
     throw { message: 'Unauthorized', data: { model } };
     // don't accept wheres for create
@@ -177,7 +204,7 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
     } else {
       const rulesWhere = ruleWhereOrBool === true ? {} : ruleWhereOrBool;
       // Note: AND: [args.where, rulesWhere] breaks on findUnique, update, delete
-      args.where = { ...(args?.where || {}), AND: [rulesWhere, ...(args?.where?.AND || []) ] };
+      args.where = { ...(args?.where || {}), AND: [rulesWhere, ...(args?.where?.AND || [])] };
     }
   }
   const modelRelations = MODEL_RELATION_MAP[model];
@@ -193,7 +220,7 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
         } else {
           return applyRulesWheres(relationInclude, { ...m, method: 'find' }, context);
         }
-      })
+      }),
     );
   }
 
@@ -210,11 +237,11 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
             // disabled: connectOrCreate, set / disconnect (no wheres), upsert
             if (
               !['connect', 'create', 'delete', 'deleteMany', 'update', 'updateMany'].includes(
-                mutationMethod
+                mutationMethod,
               )
             ) {
               console.error(
-                \`Nested \${mutationMethod} not yet supported in Bridg. Could violate database rules without further development.\`
+                \`Nested \${mutationMethod} not yet supported in Bridg. Could violate database rules without further development.\`,
               );
               throw Error();
             }
@@ -246,7 +273,7 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
             await applyRulesWheres(
               nestedArgs,
               { ...modelRelations[relationName], method },
-              context
+              context,
             );
 
             const computedArgs = {
@@ -258,7 +285,7 @@ To fix this until issue is resolved: Change "\${model}" db rules to not rely on 
             args.data[relationName][mutationMethod] = computedArgs;
           });
         })
-        .flat()
+        .flat(),
     );
   }
 };
@@ -300,14 +327,12 @@ const stripBlockedFields = (data: {} | any[], rules: DbRules): any => {
 };
 
 const asArray = (item: Array | any) => (Array.isArray(item) ? item : [item]);
-const buildSubscribeArgs = (
-  queryArgs: {
-    where: {}; // database rules
-    update?: { after: {} };
-    create?: {};
-    delete?: {};
-  }
-) => {
+const buildSubscribeArgs = (queryArgs: {
+  where: {}; // database rules
+  update?: { after: {} };
+  create?: {};
+  delete?: {};
+}) => {
   const applyRuleToAll = !queryArgs.update && !queryArgs.create && !queryArgs.delete;
   const where = queryArgs.where;
   const subscribeArgs = {};
@@ -341,6 +366,7 @@ const funcOptions = [
   'aggregate',
   'count',
   'create',
+  'createMany',
   'delete',
   'deleteMany',
   'findFirst',
@@ -355,7 +381,7 @@ const funcOptions = [
   // pulse only
   'subscribe',
 ] as const;
-type PrismaFunction = typeof funcOptions[number];
+type PrismaFunction = (typeof funcOptions)[number];
 
 const FUNC_METHOD_MAP: {
   [key in PrismaFunction]: 'find' | 'create' | 'update' | 'delete';
@@ -363,6 +389,7 @@ const FUNC_METHOD_MAP: {
   aggregate: 'find',
   count: 'find',
   create: 'create',
+  createMany: 'create',
   delete: 'delete',
   deleteMany: 'delete',
   findFirst: 'find',

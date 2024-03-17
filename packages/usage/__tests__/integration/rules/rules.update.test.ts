@@ -1,12 +1,9 @@
 import { beforeEach, it } from '@jest/globals';
-import { mockFetch } from '../../__mocks__/fetch.mock';
 import bridg from '../../generated/bridg';
 import { Blog, User } from '../../generated/prisma';
 import prisma, { TEST_TITLE, deleteDbData, seedDbData } from '../../utils/prisma.test-util';
 import { queryFails, querySucceeds } from '../../utils/query.test-util';
 import { setRules } from '../../utils/rules.test-util';
-
-global.fetch = mockFetch;
 
 let testBlog1: Blog;
 let testBlog2: Blog;
@@ -41,7 +38,7 @@ it('Update rules work with true/false', async () => {
     bridg.blog.update({
       where: { id: testBlog1.id },
       data: { body: TEST_UPDATE_BODY },
-    })
+    }),
   );
   await queryFails(bridg.blog.updateMany({ data: { body: TEST_UPDATE_BODY } }));
 
@@ -54,13 +51,13 @@ it('Update rules work with true/false', async () => {
     bridg.blog.update({
       where: { id: testBlog1.id },
       data: { body: TEST_UPDATE_BODY },
-    })
+    }),
   );
   await querySucceeds(
     bridg.blog.updateMany({
       where: { id: testBlog1.id },
       data: { body: TEST_UPDATE_BODY },
-    })
+    }),
   );
 
   record = await fetchBlog1();
@@ -80,7 +77,7 @@ it('Update rules work with where clauses', async () => {
     bridg.blog.update({
       where: { id: testBlog1.id },
       data: { body: TEST_UPDATE_BODY },
-    })
+    }),
   );
   await querySucceeds(bridg.blog.updateMany({ data: { body: TEST_UPDATE_BODY } }), 0);
 
@@ -92,14 +89,14 @@ it('Update rules work with where clauses', async () => {
     bridg.blog.update({
       where: { id: testBlog1.id },
       data: { body: TEST_UPDATE_BODY },
-    })
+    }),
   );
   await querySucceeds(
     bridg.blog.updateMany({
       where: { id: testBlog1.id },
       data: { body: TEST_UPDATE_BODY },
     }),
-    1
+    1,
   );
 
   expect((await fetchBlog1())?.body).toBe(TEST_UPDATE_BODY); // record updated
@@ -114,7 +111,7 @@ it('Find rules work on update includes', async () => {
       data: { body: '' },
       where: { id: testBlog1.id },
       include: { user: true },
-    })
+    }),
   );
   // DEEP
   setRules({
@@ -127,7 +124,7 @@ it('Find rules work on update includes', async () => {
       data: {},
       where: { id: testUser.id },
       include: { blogs: { include: { comments: true } } },
-    })
+    }),
   );
 
   // SUCCESS
@@ -137,7 +134,7 @@ it('Find rules work on update includes', async () => {
       data: { body: '' },
       where: { id: testBlog1.id },
       include: { user: true },
-    })
+    }),
   );
   // DEEP
   setRules({
@@ -150,7 +147,7 @@ it('Find rules work on update includes', async () => {
       data: {},
       where: { id: testUser.id },
       include: { blogs: { include: { comments: true } } },
-    })
+    }),
   );
 });
 

@@ -1,12 +1,9 @@
 import { beforeEach, it } from '@jest/globals';
-import { mockFetch } from '../../__mocks__/fetch.mock';
 import bridg from '../../generated/bridg';
 import { Blog, Prisma, User } from '../../generated/prisma';
 import { TEST_TITLE, TEST_TITLE_2, deleteDbData, seedDbData } from '../../utils/prisma.test-util';
 import { queryFails, querySucceeds } from '../../utils/query.test-util';
 import { setRules } from '../../utils/rules.test-util';
-
-global.fetch = mockFetch;
 
 let testBlog1: Blog;
 let testBlog2: Blog;
@@ -89,13 +86,13 @@ it('Find rules work with nested relations', async () => {
     bridg.blog.findUnique({
       where: { id: testBlog1.id },
       include: { user: true },
-    })
+    }),
   );
   await queryFails(
     bridg.blog.findUniqueOrThrow({
       where: { id: testBlog1.id },
       include: { user: true },
-    })
+    }),
   );
 
   // SUCCESS
@@ -107,13 +104,13 @@ it('Find rules work with nested relations', async () => {
     bridg.blog.findUnique({
       where: { id: testBlog1.id },
       include: { user: true },
-    })
+    }),
   );
   await querySucceeds(
     bridg.blog.findUniqueOrThrow({
       where: { id: testBlog1.id },
       include: { user: true },
-    })
+    }),
   );
 
   // DOUBLE NESTED RELATIONS
@@ -149,11 +146,11 @@ it('Find rules work with AND', async () => {
   setRules({ blog: { find: { id: testBlog2.id } } });
   await querySucceeds(
     bridg.blog.findMany({ where: { AND: [{ body: testBlog2.body }, { title: testBlog2.title }] } }),
-    1
+    1,
   );
   await querySucceeds(
     bridg.blog.findMany({ where: { AND: [{ body: testBlog2.body }, { title: testBlog1.title }] } }),
-    0
+    0,
   );
   await querySucceeds(bridg.blog.findMany({ where: { AND: [{ title: testBlog1.title }] } }), 0);
 });

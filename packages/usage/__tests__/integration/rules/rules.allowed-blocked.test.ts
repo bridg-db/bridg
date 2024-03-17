@@ -1,12 +1,9 @@
 import { beforeEach, expect, it } from '@jest/globals';
-import { mockFetch } from '../../__mocks__/fetch.mock';
 import bridg from '../../generated/bridg';
 import { Blog, User } from '../../generated/prisma';
 import { deleteDbData, seedDbData } from '../../utils/prisma.test-util';
 import { queryFails, querySucceeds } from '../../utils/query.test-util';
 import { setRules } from '../../utils/rules.test-util';
-
-global.fetch = mockFetch;
 
 let testUser: User;
 let testBlog1: Blog;
@@ -37,9 +34,9 @@ const blogFields = [
   'user',
   'comments',
 ] as const;
-type BlogField = typeof blogFields[number];
+type BlogField = (typeof blogFields)[number];
 const userFields = ['id', 'name', 'email', 'image', 'createdAt', 'updatedAt', 'blogs'] as const;
-type UserField = typeof userFields[number];
+type UserField = (typeof userFields)[number];
 
 const getAllowedEquivalentForUserFields = (blockedFields: UserField[]) =>
   userFields.filter((k) => !blockedFields.includes(k as UserField)) as UserField[];
@@ -87,7 +84,7 @@ it('Allowed/blocked property prevents reading fields', async () => {
   const nestedFindTest = async () => {
     const findMany3 = await querySucceeds(
       bridg.blog.findMany({ include: { user: { include: { blogs: true } } } }),
-      2
+      2,
     );
 
     expect(findMany3[0].title).toBeUndefined();
@@ -230,7 +227,7 @@ it('Blocked/allowedFields prevent updates from returning data', async () => {
       bridg.blog.update({
         where: { id: testBlog1.id },
         data: { body: 'edited1' },
-      })
+      }),
     );
     expect(update1.title).toBeUndefined();
     expect(update1.published).toBeUndefined();
@@ -266,7 +263,7 @@ it('Blocked/allowedFields prevent updates from returning data', async () => {
           },
         },
         include: { blogs: { where: { id: testBlog1.id } } },
-      })
+      }),
     );
 
     expect(nestedUpdate.email).toBe('update2');
@@ -314,10 +311,10 @@ it('Sensitive fields cannot be updated', async () => {
       bridg.blog.update({
         where: { id: testBlog1.id },
         data: { body: 'edited1', title: 'edited1' },
-      })
+      }),
     );
     const edit1 = await querySucceeds(
-      bridg.blog.update({ where: { id: testBlog1.id }, data: { body: 'edited1' } })
+      bridg.blog.update({ where: { id: testBlog1.id }, data: { body: 'edited1' } }),
     );
     // data returned from update respects "find" rules
     expect(edit1.published).toBeUndefined();
@@ -333,7 +330,7 @@ it('Sensitive fields cannot be updated', async () => {
             update: { where: { id: testBlog1.id }, data: { title: 'edited2' } },
           },
         },
-      })
+      }),
     );
     await queryFails(
       bridg.user.update({
@@ -344,7 +341,7 @@ it('Sensitive fields cannot be updated', async () => {
             update: { where: { id: testBlog1.id }, data: { body: 'edited2' } },
           },
         },
-      })
+      }),
     );
     await querySucceeds(
       bridg.user.update({
@@ -355,7 +352,7 @@ it('Sensitive fields cannot be updated', async () => {
             update: { where: { id: testBlog1.id }, data: { body: 'edited2' } },
           },
         },
-      })
+      }),
     );
   };
 
@@ -387,12 +384,12 @@ it('Sensitive fields cannot be used for creating data', async () => {
     await queryFails(
       bridg.blog.create({
         data: { title: 'test', published: true, userId: testUser.id },
-      })
+      }),
     );
     const createdBlog = await querySucceeds(
       bridg.blog.create({
         data: { title: 'test', userId: testUser.id },
-      })
+      }),
     );
     // returned data respects find rules
     expect(createdBlog.title).toBeUndefined();
@@ -412,13 +409,13 @@ it('Sensitive fields cannot be used for creating data', async () => {
             },
           },
         },
-      })
+      }),
     );
     const userWithBlog = await querySucceeds(
       bridg.user.create({
         data: { email: 'test2', blogs: { create: { title: 'test' } } },
         include: { blogs: true },
-      })
+      }),
     );
     expect(userWithBlog.email).toBeUndefined();
     expect(userWithBlog.name).toBeDefined();
@@ -508,10 +505,10 @@ it('Sensitive props falls back to model level if no method level available', asy
   const testMultiLevelProps = async () => {
     await queryFails(bridg.blog.findMany({ where: { title: testBlog1.title } }));
     await queryFails(
-      bridg.blog.updateMany({ where: { title: testBlog1.title }, data: { body: 'edited' } })
+      bridg.blog.updateMany({ where: { title: testBlog1.title }, data: { body: 'edited' } }),
     );
     const res = await querySucceeds(
-      bridg.blog.update({ where: { id: testBlog1.id }, data: { body: 'edited' } })
+      bridg.blog.update({ where: { id: testBlog1.id }, data: { body: 'edited' } }),
     );
     expect(res.body).toEqual('edited');
     expect(res.title).toBeUndefined();

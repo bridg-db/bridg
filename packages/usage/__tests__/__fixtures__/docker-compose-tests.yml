@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+  prisma:
+    image: postgres:13
+    command: -c max_connections=400
+    container_name: bridg-testing-postgres
+    mem_limit: 512m
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
