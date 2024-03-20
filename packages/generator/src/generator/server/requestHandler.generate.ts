@@ -61,7 +61,7 @@ export const handleRequest = async (
     } else {
       return {
         status: 400,
-        data: { error: \`Error executing Bridg query: \$\{err?.message}\` },
+        data: { error: \`Error executing Bridg query: \${err?.message}\` },
       };
     }
   }
@@ -76,19 +76,27 @@ export const handleRequest = async (
       : args;
 
     if (func === 'subscribe') {
-      if (queryArgs.where && whereReferencesRelations(queryArgs.where, model)) {
-        return {
-          status: 400,
-          data: {
-            error: \`Pulse does not support querying relational fields. Check your DB rule for \$\{model}.find\`,
-          },
-        };
-      }
-      const subscribeArgs = buildSubscribeArgs(queryArgs);
+      const { findFirstArgs, subscribeArgs, clauseHasRelation } = buildSubscribeArgs(
+        model,
+        queryArgs,
+      );
       const subscription = await db[model][func](subscribeArgs);
       onSubscriptionCreated?.(subscription);
       if (subscription instanceof Error) onSubscriptionEvent({ error: subscription });
       for await (const event of subscription) {
+        if (clauseHasRelation[event.action]) {
+          const recordId = event.created?.id || event.after?.id || event.deleted?.id;
+          const where = findFirstArgs[event.action];
+          const data = await db[model].findFirst({
+            where: {
+              ...where,
+              AND: [...(where.AND || []), { id: recordId }],
+            },
+          });
+          // if event does not satisfy full query with relations, do not send to client
+          if (!data) continue;
+        }
+
         const eventValueKeys = ['before', 'after', 'created', 'deleted'];
         const cleanedData = eventValueKeys.reduce((acc, key) => {
           if (key in event) {
@@ -168,11 +176,13 @@ const applyRulesWheres = async (
   }
 
   let ruleWhereOrBool;
-  if(typeof queryValidator !== 'boolean' && method === 'create') {
-    if(typeof queryValidator !== 'function') {
-      throw { message:  \`Invalid rule result for \${model}:\${method} - Create only accepts booleans\` }
-    } else if(!args.data){
-      throw { message: 'No data provided for .create or .createMany' }
+  if (typeof queryValidator !== 'boolean' && method === 'create') {
+    if (typeof queryValidator !== 'function') {
+      throw {
+        message: \`Invalid rule result for \${model}:\${method} - Create only accepts booleans\`,
+      };
+    } else if (!args.data) {
+      throw { message: 'No data provided for .create or .createMany' };
     }
 
     if (Array.isArray(args.data)) {
@@ -327,14 +337,39 @@ const stripBlockedFields = (data: {} | any[], rules: DbRules): any => {
 };
 
 const asArray = (item: Array | any) => (Array.isArray(item) ? item : [item]);
-const buildSubscribeArgs = (queryArgs: {
-  where: {}; // database rules
-  update?: { after: {} };
-  create?: {};
-  delete?: {};
-}) => {
+const buildSubscribeArgs = (
+  model: ModelName,
+  queryArgs: {
+    where: {}; // database rules
+    update?: { after: {} };
+    create?: {};
+    delete?: {};
+  },
+): {
+  findFirstArgs: any;
+  subscribeArgs: any;
+  clauseHasRelation: {
+    create: boolean;
+    update: boolean;
+    delete: boolean;
+  };
+} => {
   const applyRuleToAll = !queryArgs.update && !queryArgs.create && !queryArgs.delete;
   const where = queryArgs.where;
+  const clauseHasRelation = { create: false, update: false, delete: false };
+  const relationKeys = Object.keys(MODEL_RELATION_MAP[model] || {});
+
+  const stripKeysFromObj = (obj: {}, keys: string[]) => {
+    const cleaned = {};
+    let keyStripped = false;
+    Object.keys(obj).forEach((key) => {
+      if (!keys.includes(key)) cleaned[key] = obj[key];
+      else keyStripped = true;
+    });
+    return { cleaned, keyStripped };
+  };
+
+  const findFirstArgs = {};
   const subscribeArgs = {};
   ['create', 'update', 'delete'].forEach((method) => {
     const methodArgs = queryArgs[method];
@@ -344,10 +379,30 @@ const buildSubscribeArgs = (queryArgs: {
       ...userQuery,
       AND: [...(where?.AND || []), ...asArray(userQuery?.AND || [])],
     };
+    findFirstArgs[method] = queryWithRules;
+    
+    const { AND, OR, ...rest } = queryWithRules;
+    const { cleaned, keyStripped } = stripKeysFromObj(rest, relationKeys);
+    if (keyStripped) clauseHasRelation[method] = true;
 
-    subscribeArgs[method] = method === 'update' ? { after: queryWithRules } : queryWithRules;
+    const queryWithoutRelations = {
+      ...cleaned,
+      AND: AND?.map((andQuery) => {
+        const { cleaned, keyStripped } = stripKeysFromObj(andQuery, relationKeys);
+        if (keyStripped) clauseHasRelation[method] = true;
+        return cleaned;
+      }),
+      OR: OR?.map((orQuery) => {
+        const { cleaned, keyStripped } = stripKeysFromObj(orQuery, relationKeys);
+        if (keyStripped) clauseHasRelation[method] = true;
+        return cleaned;
+      }),
+    };
+    subscribeArgs[method] =
+      method === 'update' ? { after: queryWithoutRelations } : queryWithoutRelations;
   });
-  return subscribeArgs;
+
+  return { findFirstArgs, subscribeArgs, clauseHasRelation };
 };
 
 const whereReferencesRelations = (where: any, model: ModelName) => {

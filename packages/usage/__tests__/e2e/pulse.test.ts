@@ -3,7 +3,8 @@ import http from 'http';
 import { withPulse } from '../../node_modules/@prisma/extension-pulse/dist/cjs/entry.node';
 import { handleRequest } from '../generated/bridg-pulse/server/request-handler';
 // import { handleRequest } from '../generated/bridg-pulse_tmp/server/request-handler';
-import { PrismaClient } from '../generated/prisma-pulse';
+import { Prisma, PrismaClient } from '../generated/prisma-pulse';
+import { TEST_TITLE, TEST_TITLE_2 } from '../utils/prisma.test-util';
 
 jest.setTimeout(30000);
 
@@ -67,9 +68,9 @@ const isInternetConnected = () =>
       .on('error', () => resolve(false)),
   );
 
-const runCreateUpdateDelete = async () => {
+const runCreateUpdateDelete = async (userInput?: Prisma.UserCreateInput) => {
   await sleep(2);
-  const userCreated = await prisma.user.create({ data: { email: USER_EMAIL } });
+  const userCreated = await prisma.user.create({ data: { email: USER_EMAIL, ...userInput } });
   await sleep(2);
   await prisma.user.update({ where: { id: userCreated.id }, data: { name: 'john' } });
   await sleep(2);
@@ -249,17 +250,53 @@ it('Allowed fields works with pulse', async () => {
   });
 });
 
-it('cannot run pulse queries against relational rules', async () => {
-  let eventsEmitted = [];
-  const res = await createPulseListener(
+it('pulse create, update events working with relational rules', async () => {
+  let eventsEmitted: string[] = [];
+  createPulseListener(
     {
       model: 'user',
-      args: { create: { name: 'fake' }, delete: { name: 'john' } },
-      rules: { user: { find: { email: USER_EMAIL, blogs: { some: { title: 'hi' } } } } },
+      rules: { user: { find: { blogs: { some: { title: TEST_TITLE } } } } },
     },
     (e) => eventsEmitted.push(e.action),
   );
-  expect(res?.status).toBe(400);
-  await runCreateUpdateDelete();
+
+  await runCreateUpdateDelete({ blogs: { create: { title: TEST_TITLE_2 } } });
+
   expect(eventsEmitted.length).toBe(0);
+  eventsEmitted = [];
+
+  await runCreateUpdateDelete({ blogs: { create: { title: TEST_TITLE } } });
+
+  // expecting 2 and not 3, bc delete event cannot be validated after the user is deleted
+  expect(eventsEmitted.length).toBe(2);
+  expect(eventsEmitted.includes('create')).toBe(true);
+  expect(eventsEmitted.includes('update')).toBe(true);
+});
+
+it('relational pulse rules obey user sent query', async () => {
+  let eventsEmitted: string[] = [];
+
+  createPulseListener(
+    {
+      model: 'user',
+      args: {
+        create: { email: 'wrong_email' },
+        update: { email: USER_EMAIL },
+      },
+      rules: { user: { find: { blogs: { some: { title: TEST_TITLE } } } } },
+    },
+    (e) => eventsEmitted.push(e.action),
+  );
+
+  await runCreateUpdateDelete({ blogs: { create: { title: TEST_TITLE_2 } } });
+  // 0 bc blog title does not match the relational rule
+  expect(eventsEmitted.length).toBe(0);
+
+  eventsEmitted = [];
+
+  await runCreateUpdateDelete({ blogs: { create: { title: TEST_TITLE } } });
+
+  // 1 event. create query does not match, but update does, both pass relational rule
+  expect(eventsEmitted.length).toBe(1);
+  expect(eventsEmitted.includes('update')).toBe(true);
 });
