@@ -87,12 +87,7 @@ export const handleRequest = async (
         if (clauseHasRelation[event.action]) {
           const recordId = event.created?.id || event.after?.id || event.deleted?.id;
           const where = findFirstArgs[event.action];
-          const data = await db[model].findFirst({
-            where: {
-              ...where,
-              AND: [...(where.AND || []), { id: recordId }],
-            },
-          });
+          const data = await db[model].findFirst({ where: { ...where, id: recordId } });
           // if event does not satisfy full query with relations, do not send to client
           if (!data) continue;
         }
