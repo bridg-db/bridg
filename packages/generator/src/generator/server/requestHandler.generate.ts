@@ -358,7 +358,14 @@ const buildSubscribeArgs = (
     const cleaned = {};
     let keyStripped = false;
     Object.keys(obj).forEach((key) => {
-      if (!keys.includes(key)) cleaned[key] = obj[key];
+      const value = obj[key];
+      if (Array.isArray(value) && (key === 'AND' || key === 'OR')) {
+        cleaned[key] = value.map((val) => {
+          const { cleaned, keyStripped: stripped } = stripKeysFromObj(val, keys);
+          if (stripped) keyStripped = true;
+          return cleaned;
+        });
+      } else if (!keys.includes(key)) cleaned[key] = obj[key];
       else keyStripped = true;
     });
     return { cleaned, keyStripped };
@@ -375,26 +382,10 @@ const buildSubscribeArgs = (
       AND: [...(where?.AND || []), ...asArray(userQuery?.AND || [])],
     };
     findFirstArgs[method] = queryWithRules;
-    
-    const { AND, OR, ...rest } = queryWithRules;
-    const { cleaned, keyStripped } = stripKeysFromObj(rest, relationKeys);
+    const { cleaned, keyStripped } = stripKeysFromObj(queryWithRules, relationKeys);
     if (keyStripped) clauseHasRelation[method] = true;
 
-    const queryWithoutRelations = {
-      ...cleaned,
-      AND: AND?.map((andQuery) => {
-        const { cleaned, keyStripped } = stripKeysFromObj(andQuery, relationKeys);
-        if (keyStripped) clauseHasRelation[method] = true;
-        return cleaned;
-      }),
-      OR: OR?.map((orQuery) => {
-        const { cleaned, keyStripped } = stripKeysFromObj(orQuery, relationKeys);
-        if (keyStripped) clauseHasRelation[method] = true;
-        return cleaned;
-      }),
-    };
-    subscribeArgs[method] =
-      method === 'update' ? { after: queryWithoutRelations } : queryWithoutRelations;
+    subscribeArgs[method] = method === 'update' ? { after: cleaned } : cleaned;
   });
 
   return { findFirstArgs, subscribeArgs, clauseHasRelation };
