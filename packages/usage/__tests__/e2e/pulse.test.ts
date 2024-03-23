@@ -300,3 +300,34 @@ it('relational pulse rules obey user sent query', async () => {
   expect(eventsEmitted.length).toBe(1);
   expect(eventsEmitted.includes('update')).toBe(true);
 });
+
+it('works with nested AND/OR', async () => {
+  let eventsEmitted: string[] = [];
+
+  createPulseListener(
+    {
+      model: 'user',
+      rules: {
+        user: {
+          find: (uid) => ({
+            AND: [{ OR: [{ email: 'wrong' }, { blogs: { some: { title: TEST_TITLE } } }] }],
+          }),
+        },
+      },
+    },
+    (e) => eventsEmitted.push(e.action),
+  );
+
+  await runCreateUpdateDelete({ blogs: { create: { title: TEST_TITLE_2 } } });
+  // 0 bc blog title does not match the relational rule
+  expect(eventsEmitted.length).toBe(0);
+
+  eventsEmitted = [];
+
+  await runCreateUpdateDelete({ blogs: { create: { title: TEST_TITLE } } });
+
+  // delete cannot be authorized with relational rules
+  expect(eventsEmitted.length).toBe(2);
+  expect(eventsEmitted.includes('create')).toBe(true);
+  expect(eventsEmitted.includes('update')).toBe(true);
+});
