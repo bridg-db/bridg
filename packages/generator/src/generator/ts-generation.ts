@@ -65,11 +65,11 @@ export const generateFiles = ({
   schemaStr = strip(schemaStr);
 
   generateClientDbFile({ modelNames, outputLocation, prismaLocation, dbProvider });
+  generateBridgConfigFile({ bridgConfig, outputLocation });
   // server
   generateHandlerFile({ bridgConfig, outputLocation, prismaLocation });
   generateModelRelationsFile({ modelNames, schemaStr, outputLocation });
   generateServerIndexTypesFile({ modelNames, outputLocation, prismaLocation });
-  generateBridgConfigFile({ bridgConfig, outputLocation });
 };
 
 export const generateRulesFile = (options: GeneratorOptions, outputRoot: string) => {

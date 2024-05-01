@@ -10,9 +10,26 @@ const generateExports = (models: string[]) => {
   );
 
   return `
-type WebsocketFunctions = { $sendWebsocketMessage: (data: any) => Promise<any> };
+type WebsocketFunctions = {
+  $socket: {
+    sendMessage: (data: any) => Promise<any>;
+    authenticate: (data: any) => Promise<any>;
+  };
+};
+
 const wsTypedObj = (
-  config.apiIsWebsocket ? { $sendWebsocketMessage: (data: any) => exec(data) } : {}
+  config.apiIsWebsocket
+    ? {
+        $socket: {
+          sendMessage: (data: any) => exec(data),
+          authenticate: async (authData: any) => {
+            const authRes = await exec({ auth: authData } as any);
+            lastWsAuth = { auth: authData, createdAt: Date.now() };
+            return authRes;
+          },
+        },
+      }
+    : {}
 ) as typeof config.apiIsWebsocket extends true ? WebsocketFunctions : {};
 
 const bridg = {${exports}\n...wsTypedObj,\n};\nexport default bridg;`;
@@ -45,15 +62,16 @@ export const exec = (
   }
 };
 
+const getRandomId = () => crypto.randomUUID();
+
 const generateClient = (model: string): Record<string, (args: any) => void> => ({
   aggregate: (args) => exec({ func: 'aggregate', model, args }),
   count: (args) => exec({ func: 'count', model, args }),
   create: (args) => exec({ func: 'create', model, args }),${
     dbProvider === 'sqlite'
       ? ''
-      : `\n\tcreateMany: (args) => exec({ func: 'createMany', model, args }),\n`
+      : `\n\tcreateMany: (args) => exec({ func: 'createMany', model, args }),`
   }
-  createMany: (args) => exec({ func: 'createMany', model, args }),
   delete: (args) => exec({ func: 'delete', model, args }),
   deleteMany: (args) => exec({ func: 'deleteMany', model, args }),
   findFirst: (args) => exec({ func: 'findFirst', model, args }),
@@ -67,10 +85,25 @@ const generateClient = (model: string): Record<string, (args: any) => void> => (
   upsert: (args) => exec({ func: 'upsert', model, args }),
   // pulse-only
   subscribe: (args) => {
+    let subId = getRandomId();
     const que = new AsyncBlockingQueue();
-    que.stop = exec({ func: 'subscribe', model, args }, (event) =>
-      que.enqueue(event)
-    ) as () => Promise<void>;
+
+    const applySubscription = () => {
+      const stopSubscription = exec(
+        { func: 'subscribe', model, args },
+        (event) => {
+          que.enqueue(event);
+        },
+      ) as () => Promise<void>;
+
+      que.stop = () => {
+        delete outstandingSubscriptions[subId];
+        stopSubscription();
+      };
+    };
+
+    outstandingSubscriptions[subId] = applySubscription;
+    applySubscription();
 
     return que;
   },
@@ -88,8 +121,19 @@ type BridgModel<PrismaDelegate, model extends ModelName> = Omit<
   (typeof config.pulseEnabled extends true ? BridgSubscribe<model> : {});
 
 // Websocket helpers, needed for Pulse enabled projects
+const outstandingSubscriptions: Record<string, () => void> = {};
+let heartbeatInterval: NodeJS.Timeout | undefined;
+const applyWsHealthCheck = () => {
+  if (heartbeatInterval) return;
+  heartbeatInterval = setInterval(() => {
+    if (ws?.readyState === ws?.CLOSED || ws?.readyState === ws?.CLOSING) {
+      getWebsocket();
+    }
+  }, 1000 * 5);
+};
 const messageCallbacks: Record<string, (data: any) => void> = {};
 let ws: WebSocket | undefined;
+let lastWsAuth: { auth: any; createdAt: number } | undefined;
 const getWebsocket = (): Promise<WebSocket> =>
   new Promise((resolve) => {
     if (ws && ws.readyState === ws.OPEN) {
@@ -99,10 +143,20 @@ const getWebsocket = (): Promise<WebSocket> =>
     } else {
       ws = new WebSocket(config.api);
       ws.addEventListener('message', (event) => {
-        const data: { id: string; payload: any } = JSON.parse(event.data || '{}');
+        const data: { id: string; payload: any } = JSON.parse(
+          event.data || '{}',
+        );
         messageCallbacks[data.id]?.(data.payload);
       });
-      ws.addEventListener('open', () => ws && resolve(ws));
+      ws.addEventListener('open', async () => {
+        if (lastWsAuth && Date.now() - lastWsAuth.createdAt < 1000 * 60) {
+          await exec({ auth: lastWsAuth.auth } as any);
+          // reapply any outstanding subscriptions
+          Object.values(outstandingSubscriptions).forEach((sub) => sub());
+        }
+        applyWsHealthCheck();
+        ws && resolve(ws);
+      });
     }
   });
 
@@ -111,13 +165,14 @@ class WsMessage {
   payload: {};
   type?: string;
   constructor(payload: {}, type?: string) {
-    this.id = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+    this.id = crypto.randomUUID();
     this.payload = payload;
     this.type = type;
   }
 }
 
-const sendWsMsg = (msg: WsMessage) => getWebsocket().then((ws) => ws.send(JSON.stringify(msg)));
+const sendWsMsg = (msg: WsMessage) =>
+  getWebsocket().then((ws) => ws.send(JSON.stringify(msg)));
 
 // subscription, with callback
 const websocketListener = (msg: {}, cb: (data: any) => void) => {
@@ -147,7 +202,7 @@ class AsyncBlockingQueue<T> {
     this.promises.push(
       new Promise((resolve) => {
         this.resolvers.push(resolve);
-      })
+      }),
     );
   }
 
