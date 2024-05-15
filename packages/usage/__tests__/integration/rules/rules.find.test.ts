@@ -1,5 +1,5 @@
 import { beforeEach, it } from '@jest/globals';
-import bridg from '../../generated/bridg';
+import bridg from '../../generated/bridg/index';
 import { Blog, Prisma, User } from '../../generated/prisma';
 import { TEST_TITLE, TEST_TITLE_2, deleteDbData, seedDbData } from '../../utils/prisma.test-util';
 import { queryFails, querySucceeds } from '../../utils/query.test-util';
@@ -145,11 +145,15 @@ it('Find rules work with nested relations', async () => {
 it('Find rules work with AND', async () => {
   setRules({ blog: { find: { id: testBlog2.id } } });
   await querySucceeds(
-    bridg.blog.findMany({ where: { AND: [{ body: testBlog2.body }, { title: testBlog2.title }] } }),
+    bridg.blog.findMany({
+      where: { AND: [{ body: testBlog2.body }, { title: testBlog2.title }] },
+    }),
     1,
   );
   await querySucceeds(
-    bridg.blog.findMany({ where: { AND: [{ body: testBlog2.body }, { title: testBlog1.title }] } }),
+    bridg.blog.findMany({
+      where: { AND: [{ body: testBlog2.body }, { title: testBlog1.title }] },
+    }),
     0,
   );
   await querySucceeds(bridg.blog.findMany({ where: { AND: [{ title: testBlog1.title }] } }), 0);

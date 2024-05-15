@@ -13,8 +13,8 @@ export const mockFetch = jest.fn().mockImplementation((api: string, args: any) =
     });
 
     fetchResolve({
-      status: bridgRes.status,
-      json: () => Promise.resolve(bridgRes.data),
+      status: bridgRes?.status,
+      json: () => Promise.resolve(bridgRes?.data),
     });
   });
 });

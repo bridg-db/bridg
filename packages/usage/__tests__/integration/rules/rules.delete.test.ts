@@ -1,5 +1,5 @@
 import { beforeEach, expect, it } from '@jest/globals';
-import bridg from '../../generated/bridg';
+import bridg from '../../generated/bridg/index';
 import { Blog, Prisma, User } from '../../generated/prisma';
 import prisma, {
   TEST_TITLE,
