@@ -22,14 +22,14 @@
     "@types/node": "16.11.7",
     "bridg": "workspace:*",
     "jest": "27.4.7",
-    "prisma": "5.6.0",
+    "prisma": "5.14.0",
     "ts-jest": "27.1.4",
     "ts-node": "^10.9.1",
     "typescript": "4.5.2",
     "web-streams-polyfill": "^4.0.0"
   },
   "dependencies": {
-    "@prisma/client": "5.6.0",
+    "@prisma/client": "5.14.0",
     "@prisma/extension-pulse": "^1.0.1"
   }
 }

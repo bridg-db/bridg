@@ -1,4 +1,4 @@
-import { DbRules } from '../generated/bridg/server';
+import { DbRules } from '../generated/bridg/server/index';
 
 let rules: DbRules = {};
 

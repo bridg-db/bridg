@@ -1,4 +1,4 @@
-import bridg from '../../generated/bridg';
+import bridg from '../../generated/bridg/index';
 import { expectQueryError } from '../../utils/query.test-util';
 import { setRules } from '../../utils/rules.test-util';
 

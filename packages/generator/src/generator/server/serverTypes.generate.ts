@@ -18,7 +18,7 @@ export const generateServerTypes = (models: string[]) => {
     | 'count'
     | 'groupBy';
   type UpdateMethods = 'update' | 'updateMany' | 'upsert';
-  type CreateMethods = 'create' | 'createMany' | 'upsert';
+  type CreateMethods = 'create' | 'createMany' | 'createManyAndReturn' | 'upsert';
   type DeleteMethods = 'delete' | 'deleteMany';
   
   type HideableProps<ModelWhereInput> = (keyof Omit<ModelWhereInput, 'AND' | 'OR' | 'NOT'>)[];
@@ -58,15 +58,15 @@ export const generateServerTypes = (models: string[]) => {
   export type DbRules = Partial<{${models.reduce(
     (acc, Model) =>
       `${acc}\n  ${uncapitalize(
-        Model
+        Model,
       )}: ModelRules<Prisma.${Model}WhereInput, Prisma.${Model}UncheckedCreateInput>;`,
-    `\n  default: boolean;`
+    `\n  default: boolean;`,
   )}
   }>;
   
   export const models = [${models.reduce(
     (acc, m) => `${acc}${acc ? ', ' : ''}'${uncapitalize(m)}'`,
-    ``
+    ``,
   )}] as const;
   // TODO: get this from Prisma
   // export type ClientModelName = Uncapitalize<Prisma.ModelName>;
@@ -92,7 +92,7 @@ export const generateServerIndexTypesFile = ({
 
   // { Prisma, User, Model2, Model3 }
   const importStatement = `import { Prisma, type PrismaClient, ${modelNames.join(
-    ', '
+    ', ',
   )} } from '${prismaImportPath}';`;
   const fileContent = `${importStatement}${types}`;
 

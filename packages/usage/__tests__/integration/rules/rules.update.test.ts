@@ -1,5 +1,5 @@
 import { beforeEach, it } from '@jest/globals';
-import bridg from '../../generated/bridg';
+import bridg from '../../generated/bridg/index';
 import { Blog, User } from '../../generated/prisma';
 import prisma, { TEST_TITLE, deleteDbData, seedDbData } from '../../utils/prisma.test-util';
 import { queryFails, querySucceeds } from '../../utils/query.test-util';

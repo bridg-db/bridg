@@ -1,5 +1,5 @@
 import { beforeEach, expect, it } from '@jest/globals';
-import bridg from '../../generated/bridg';
+import bridg from '../../generated/bridg/index';
 import { Blog, User } from '../../generated/prisma';
 import prisma, { TEST_TITLE_2, deleteDbData, seedDbData } from '../../utils/prisma.test-util';
 import { queryFails, querySucceeds } from '../../utils/query.test-util';
@@ -30,8 +30,6 @@ it('Create rules work with true/false', async () => {
   // FAIL
   setRules({ blog: { create: false } });
   await queryFails(bridg.blog.create({ data: { title: TEST_TITLE } }));
-  // TODO: createMany not supported via SQLite
-  // await queryFails(bridg.blog.createMany({}));
 
   // SUCCESS
   setRules({ blog: { create: true } });
@@ -156,11 +154,9 @@ it('Supports model.rule property as an alternative for setting rules', async () 
 it('createMany works with true/false', async () => {
   // FAIL
   setRules({ blog: { create: false } });
-  await queryFails(
-    bridg.blog.createMany({
-      data: [{ title: TEST_TITLE }, { title: TEST_TITLE }],
-    }),
-  );
+  const data = [{ title: TEST_TITLE }, { title: TEST_TITLE }];
+  await queryFails(bridg.blog.createMany({ data }));
+  await queryFails(bridg.blog.createManyAndReturn({ data }));
 
   // SUCCESS
   setRules({ blog: { create: true } });
@@ -176,6 +172,13 @@ it('createMany works with true/false', async () => {
   expect(bB.length).toBe(2);
   expect(bB?.at(0)?.title).toBe('b');
   expect(bB?.at(1)?.title).toBe('c');
+
+  const cManyRes = await querySucceeds(
+    bridg.blog.createManyAndReturn({ data: [{ title: 'd' }, { title: 'e' }] }),
+    2,
+  );
+  expect(cManyRes?.at(0).title).toBe('d');
+  expect(cManyRes?.at(1).title).toBe('e');
 });
 
 it('createMany works with callback', async () => {
@@ -185,19 +188,14 @@ it('createMany works with callback', async () => {
       create: (uid, data) => data?.title !== TEST_TITLE_2,
     },
   });
-  await queryFails(
-    bridg.blog.createMany({
-      data: [{ title: TEST_TITLE }, { title: TEST_TITLE_2 }],
-    }),
-  );
+  const badData = [{ title: TEST_TITLE }, { title: TEST_TITLE_2 }];
+  await queryFails(bridg.blog.createMany({ data: badData }));
+  await queryFails(bridg.blog.createManyAndReturn({ data: badData }));
 
+  const legalData = [{ title: TEST_TITLE }, { title: 'some-other-legal-value' }];
   // SUCCESS
-  await querySucceeds(
-    bridg.blog.createMany({
-      data: [{ title: TEST_TITLE }, { title: 'some-other-legal-value' }],
-    }),
-    2,
-  );
+  await querySucceeds(bridg.blog.createMany({ data: legalData }), 2);
+  await querySucceeds(bridg.blog.createManyAndReturn({ data: legalData }), 2);
 });
 
 // TODO: test that create callbacks work for relational creates on .update,

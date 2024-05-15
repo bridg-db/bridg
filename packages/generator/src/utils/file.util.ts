@@ -1,12 +1,5 @@
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdir,
-  rename,
-  rmSync,
-  writeFileSync,
-} from 'fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { mkdir, readdir, rename } from 'fs/promises';
 import path from 'path';
 import prettier from 'prettier';
 
@@ -36,7 +29,7 @@ export const writeFileSafely = (filename: string, content: string) => {
       }
       return folderPath;
     },
-    root // first 'acc', important
+    root, // first 'acc', important
   );
 
   // -- write file
@@ -56,32 +49,16 @@ export const deleteDirSafely = (dirPath: string) => {
   exists && rmSync(dirPath, { recursive: true, force: true });
 };
 
-export const moveDirContentsToDirectory = (
-  sourceDirectory: string,
-  destinationDirectory: string
-): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    readdir(sourceDirectory, (err, files) => {
-      if (err) {
-        console.error('Error reading source directory:', err);
-        return reject(err);
-      }
+export const moveDirContentsToDirectory = async (
+  source: string,
+  destination: string,
+): Promise<void[]> => {
+  if (!existsSync(destination)) await mkdir(destination, { recursive: true });
+  const files = await readdir(source);
 
-      files.forEach((file) => {
-        const sourceFilePath = path.join(sourceDirectory, file);
-        const destinationFilePath = path.join(destinationDirectory, file);
-
-        rename(sourceFilePath, destinationFilePath, (err) => {
-          if (err) {
-            console.error(`Error moving ${file}:`, err);
-          } else {
-            console.log(`Moved ${file} to destination.`);
-          }
-        });
-      });
-      resolve('done');
-    });
-  });
+  return Promise.all(
+    files.map((file) => rename(path.join(source, file), path.join(destination, file))),
+  );
 };
 
 export const formatFile = (content: string): Promise<string> => {
@@ -103,24 +80,18 @@ export const formatFile = (content: string): Promise<string> => {
 
         rej(error);
       }
-    })
+    }),
   );
 };
 
-export const getRelativePathWithLeadingDot = (
-  sourceFile: string,
-  targetFile: string
-) => {
+export const getRelativePathWithLeadingDot = (sourceFile: string, targetFile: string) => {
   const sourceDir = path.dirname(sourceFile);
   const loc = path.relative(sourceDir, targetFile);
   // x/y/z => ./x/y/z
   return loc.startsWith('.') ? loc : `./${loc}`;
 };
 
-export const getRelativeImportPath = (
-  sourceFile: string,
-  importedFile: string
-) => {
+export const getRelativeImportPath = (sourceFile: string, importedFile: string) => {
   const location = getRelativePathWithLeadingDot(sourceFile, importedFile);
   const [beforeNM, afterNM] = location.split('node_modules/');
   // ./x/y/node_modules/z => z || ./x/y/z => ./x/y/z
