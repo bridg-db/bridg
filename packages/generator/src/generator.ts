@@ -4,7 +4,7 @@ import * as ts from 'typescript';
 import { compileTsDir } from './compileTsDir';
 import { GENERATOR_NAME, VERSION } from './constants';
 import { generateBridgTsFiles, generateRulesFile } from './generator/ts-generation';
-import { deleteDirSafely, deleteFileSafely } from './utils/file.util';
+import { deleteDirSafely, deleteFileSafely, moveDirContentsToDirectory } from './utils/file.util';
 
 generatorHandler({
   onManifest() {
@@ -19,6 +19,8 @@ generatorHandler({
   },
   onGenerate: async (options: GeneratorOptions) => {
     const debug = options.generator.config.debug === 'true';
+    const skipCompile = options.generator.config.compile === 'false';
+
     const outRoot = options.generator.output?.value || './node_modules/bridg';
     // keep at same level, dont make /tmp a subdirectory
     // causes issues when trying to import custom prisma output paths
@@ -26,7 +28,12 @@ generatorHandler({
 
     cleanupPreviouslyGeneratedFiles(outRoot);
     generateBridgTsFiles(options, tempDir);
-    compileBridgFiles(tempDir, outRoot, debug);
+
+    if (skipCompile) {
+      await moveDirContentsToDirectory(tempDir, outRoot);
+    } else {
+      compileBridgFiles(tempDir, outRoot, debug);
+    }
     deleteDirSafely(tempDir);
     generateRulesFile(options, outRoot);
 
