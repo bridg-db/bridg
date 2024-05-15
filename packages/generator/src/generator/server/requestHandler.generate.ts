@@ -177,7 +177,7 @@ const applyRulesWheres = async (
         message: \`Invalid rule result for \${model}:\${method} - Create only accepts booleans\`,
       };
     } else if (!args.data) {
-      throw { message: 'No data provided for .create or .createMany' };
+      throw { message: 'No data provided for create query' };
     }
 
     if (Array.isArray(args.data)) {
@@ -408,6 +408,7 @@ const funcOptions = [
   'count',
   'create',
   'createMany',
+  'createManyAndReturn',
   'delete',
   'deleteMany',
   'findFirst',
@@ -431,6 +432,7 @@ const FUNC_METHOD_MAP: {
   count: 'find',
   create: 'create',
   createMany: 'create',
+  createManyAndReturn: 'create',
   delete: 'delete',
   deleteMany: 'delete',
   findFirst: 'find',

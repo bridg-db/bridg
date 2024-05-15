@@ -327,7 +327,7 @@ The properties available to create rules for are:
 
 - `find`: authorizes reading data (.findMany, .findFirst, .findFirstOrThrow, .findUnique, .findUniqueOrThrow, .aggregate, .count, .groupBy)
 - `update`: authorizes updates (.update, .updateMany, .upsert)
-- `create`: authorizes creating data (.create, .createMany, .upsert)
+- `create`: authorizes creating data (.create, .createMany, .createManyAndReturn, .upsert)
 - `delete`: authorizes deleting data (.delete, .deleteMany)
 
 Note: .upsert uses `update` rules, if no data is updated, it will use `create` rules for creation

@@ -4,35 +4,32 @@ import { getRelativeImportPath, writeFileSafely } from '../../utils/file.util';
 import { capitalize, uncapitalize } from '../../utils/string.util';
 
 const generateExports = (models: string[]) => {
-  const exports = models.reduce(
-    (acc, model) => `${acc}\n  ${uncapitalize(model)}:${uncapitalize(model)}Client,`,
+  const delegates = models.reduce(
+    (acc, model) =>
+      `${acc}\n  ${uncapitalize(model)}: BridgModel<Prisma.${capitalize(
+        model,
+      )}Delegate, '${uncapitalize(model)}'>;`,
     ``,
   );
 
   return `
-type WebsocketFunctions = {
+type BridgClient = {${delegates}
+} & (typeof config.apiIsWebsocket extends true ? WebsocketFunctions : {});
+
+const baseFunctions = {
   $socket: {
-    sendMessage: (data: any) => Promise<any>;
-    authenticate: (data: any) => Promise<any>;
-  };
+    sendMessage: (data: any) => exec(data),
+    authenticate: async (authData: any) => {
+      const authRes = await exec({ auth: authData } as any);
+      lastWsAuth = { auth: authData, createdAt: Date.now() };
+      return authRes;
+    },
+  },
 };
 
-const wsTypedObj = (
-  config.apiIsWebsocket
-    ? {
-        $socket: {
-          sendMessage: (data: any) => exec(data),
-          authenticate: async (authData: any) => {
-            const authRes = await exec({ auth: authData } as any);
-            lastWsAuth = { auth: authData, createdAt: Date.now() };
-            return authRes;
-          },
-        },
-      }
-    : {}
-) as typeof config.apiIsWebsocket extends true ? WebsocketFunctions : {};
+const bridg = createBridgProxy(baseFunctions) as BridgClient;
 
-const bridg = {${exports}\n...wsTypedObj,\n};\nexport default bridg;`;
+export default bridg;`;
 };
 
 const getHead = (dbProvider?: PrismaDbProvider) => `
@@ -42,7 +39,7 @@ import { type PulseSubscribe } from './server/request-handler';
 
 export const exec = (
   request: { model: string; args?: {}; func: string },
-  subscriptionCallback?: (e: any) => void
+  subscriptionCallback?: (e: any) => void,
 ) => {
   if (!config.apiIsWebsocket) {
     return fetch(config.api, {
@@ -62,52 +59,8 @@ export const exec = (
   }
 };
 
+// @ts-ignore
 const getRandomId = () => crypto.randomUUID();
-
-const generateClient = (model: string): Record<string, (args: any) => void> => ({
-  aggregate: (args) => exec({ func: 'aggregate', model, args }),
-  count: (args) => exec({ func: 'count', model, args }),
-  create: (args) => exec({ func: 'create', model, args }),${
-    dbProvider === 'sqlite'
-      ? ''
-      : `\n\tcreateMany: (args) => exec({ func: 'createMany', model, args }),`
-  }
-  delete: (args) => exec({ func: 'delete', model, args }),
-  deleteMany: (args) => exec({ func: 'deleteMany', model, args }),
-  findFirst: (args) => exec({ func: 'findFirst', model, args }),
-  findFirstOrThrow: (args) => exec({ func: 'findFirstOrThrow', model, args }),
-  findMany: (args) => exec({ func: 'findMany', model, args }),
-  findUnique: (args) => exec({ func: 'findUnique', model, args }),
-  findUniqueOrThrow: (args) => exec({ func: 'findUniqueOrThrow', model, args }),
-  groupBy: (args) => exec({ func: 'groupBy', model, args }),
-  update: (args) => exec({ func: 'update', model, args }),
-  updateMany: (args) => exec({ func: 'updateMany', model, args }),
-  upsert: (args) => exec({ func: 'upsert', model, args }),
-  // pulse-only
-  subscribe: (args) => {
-    let subId = getRandomId();
-    const que = new AsyncBlockingQueue();
-
-    const applySubscription = () => {
-      const stopSubscription = exec(
-        { func: 'subscribe', model, args },
-        (event) => {
-          que.enqueue(event);
-        },
-      ) as () => Promise<void>;
-
-      que.stop = () => {
-        delete outstandingSubscriptions[subId];
-        stopSubscription();
-      };
-    };
-
-    outstandingSubscriptions[subId] = applySubscription;
-    applySubscription();
-
-    return que;
-  },
-});
 
 type BridgSubscribe<model extends ModelName> = {
   subscribe: (
@@ -116,8 +69,7 @@ type BridgSubscribe<model extends ModelName> = {
   ) => // @ts-ignore
   Promise<Exclude<Awaited<ReturnType<PulseSubscribe<model>>>, Error>>;
 };
-type BridgModel<PrismaDelegate, model extends ModelName> = Omit<
-  PrismaDelegate, 'fields'> &
+type BridgModel<PrismaDelegate, model extends ModelName> = Omit<PrismaDelegate, 'fields'> &
   (typeof config.pulseEnabled extends true ? BridgSubscribe<model> : {});
 
 // Websocket helpers, needed for Pulse enabled projects
@@ -143,9 +95,7 @@ const getWebsocket = (): Promise<WebSocket> =>
     } else {
       ws = new WebSocket(config.api);
       ws.addEventListener('message', (event) => {
-        const data: { id: string; payload: any } = JSON.parse(
-          event.data || '{}',
-        );
+        const data: { id: string; payload: any } = JSON.parse(event.data || '{}');
         messageCallbacks[data.id]?.(data.payload);
       });
       ws.addEventListener('open', async () => {
@@ -165,14 +115,13 @@ class WsMessage {
   payload: {};
   type?: string;
   constructor(payload: {}, type?: string) {
-    this.id = crypto.randomUUID();
+    this.id = getRandomId();
     this.payload = payload;
     this.type = type;
   }
 }
 
-const sendWsMsg = (msg: WsMessage) =>
-  getWebsocket().then((ws) => ws.send(JSON.stringify(msg)));
+const sendWsMsg = (msg: WsMessage) => getWebsocket().then((ws) => ws.send(JSON.stringify(msg)));
 
 // subscription, with callback
 const websocketListener = (msg: {}, cb: (data: any) => void) => {
@@ -233,15 +182,55 @@ class AsyncBlockingQueue<T> {
     };
   }
 }
+
+function createBridgProxy(defaultFncs: Record<string, any>, path = []): any {
+  return new Proxy(() => {}, {
+    get(target, property) {
+      if (property === 'toString') return () => path.join('.');
+      // @ts-ignore
+      return createBridgProxy(defaultFncs, [...path, property]);
+    },
+    apply(target, thisArg, args) {
+      const fn = path.reduce((acc, key) => (acc ? acc[key] : undefined), defaultFncs);
+      if (typeof fn === 'function') return fn(...args);
+
+      args = args?.at(0);
+      const [model, func] = path;
+
+      // pulse-only
+      if (func === 'subscribe') {
+        let subId = getRandomId();
+        const que = new AsyncBlockingQueue();
+
+        const applySubscription = () => {
+          const stopSubscription = exec({ func: 'subscribe', model, args }, (event) => {
+            que.enqueue(event);
+          }) as () => Promise<void>;
+
+          que.stop = () => {
+            delete outstandingSubscriptions[subId];
+            stopSubscription();
+          };
+        };
+
+        outstandingSubscriptions[subId] = applySubscription;
+        applySubscription();
+
+        return que;
+      }
+
+      return exec({ func, model, args });
+    },
+  });
+}
+
+type WebsocketFunctions = {
+  $socket: {
+    sendMessage: (data: any) => Promise<any>;
+    authenticate: (data: any) => Promise<any>;
+  };
+};
 `;
-
-const MODEL_TEMPLATE = `const *{model}Client = generateClient('*{model}') as BridgModel<Prisma.*{Model}Delegate, '*{model}'>;\n`;
-
-const genModelClient = (model: string) =>
-  MODEL_TEMPLATE.replaceAll(`*{model}`, uncapitalize(model)).replaceAll(
-    `*{Model}`,
-    capitalize(model),
-  );
 
 export const generateClientDbFile = ({
   modelNames,
@@ -261,10 +250,7 @@ export const generateClientDbFile = ({
     : `@prisma/client`;
 
   const importStatement = `import { Prisma } from '${prismaImportPath}';`;
-  const modelClients = modelNames.reduce((acc, model) => `${acc}${genModelClient(model)}`, ``);
-  const clientDbCode = `${importStatement}${getHead(dbProvider)}${modelClients}${generateExports(
-    modelNames,
-  )}`;
+  const clientDbCode = `${importStatement}${getHead(dbProvider)}${generateExports(modelNames)}`;
 
   //   writeFileSafely(`${'./node_modules/bridg/dist/package'}/client/db.ts`, clientDbCode);
   writeFileSafely(`${outputLocation}/index.ts`, clientDbCode);

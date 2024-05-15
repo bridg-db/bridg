@@ -11,6 +11,8 @@ dev.db
 /packages/usage/output
 /packages/usage/custom-output
 /packages/usage/__tests__/generated
+/packages/usage/__tests__/__fixtures__/bridg.ts
+/packages/usage/__tests__/__fixtures__/rules.ts
 /packages/usage/prisma/prisma
 /packages/usage/prisma/bridg
 /packages/usage/temp
